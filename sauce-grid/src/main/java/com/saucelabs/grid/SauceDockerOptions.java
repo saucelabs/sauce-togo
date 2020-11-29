@@ -164,7 +164,7 @@ public class SauceDockerOptions {
     return videoImage.map(docker::getImage).orElse(null);
   }
 
-  private DockerSessionAssetsPath getAssetsPath() {
+  public DockerSessionAssetsPath getAssetsPath() {
     Optional<String> hostAssetsPath = config.get(DOCKER_SECTION, "assets-path");
     Optional<String> containerAssetsPath = config.get(DOCKER_SECTION, "container-assets-path");
     if (hostAssetsPath.isPresent() && containerAssetsPath.isPresent()) {

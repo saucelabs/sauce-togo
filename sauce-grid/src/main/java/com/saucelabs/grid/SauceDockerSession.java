@@ -12,10 +12,12 @@ import org.openqa.selenium.remote.tracing.Tracer;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SauceDockerSession extends ProtocolConvertingSession {
   private final Container container;
   private final Container videoContainer;
+  private final AtomicInteger screenshotCount;
 
   SauceDockerSession(
     Container container,
@@ -32,6 +34,11 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     super(tracer, client, id, url, downstream, upstream, stereotype, capabilities, startTime);
     this.container = Require.nonNull("Container", container);
     this.videoContainer = videoContainer;
+    this.screenshotCount = new AtomicInteger(0);
+  }
+
+  public int increaseScreenshotCount() {
+    return screenshotCount.incrementAndGet();
   }
 
   @Override

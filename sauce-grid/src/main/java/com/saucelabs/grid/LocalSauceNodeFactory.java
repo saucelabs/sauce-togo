@@ -11,6 +11,7 @@ import org.openqa.selenium.grid.server.NetworkOptions;
 import org.openqa.selenium.remote.http.HttpClient;
 import org.openqa.selenium.remote.tracing.Tracer;
 
+@SuppressWarnings("unused")
 public class LocalSauceNodeFactory {
 
   public static Node create(Config config) {
@@ -24,15 +25,19 @@ public class LocalSauceNodeFactory {
     Tracer tracer = loggingOptions.getTracer();
     HttpClient.Factory clientFactory = networkOptions.getHttpClientFactory(tracer);
 
+    SauceDockerOptions sauceDockerOptions = new SauceDockerOptions(config);
+
     LocalSauceNode.Builder builder = LocalSauceNode.builder(
       tracer,
       eventOptions.getEventBus(),
       serverOptions.getExternalUri(),
       nodeOptions.getPublicGridUri().orElseGet(serverOptions::getExternalUri),
-      secretOptions.getRegistrationSecret());
+      secretOptions.getRegistrationSecret(),
+      sauceDockerOptions.getAssetsPath());
 
-    new SauceDockerOptions(config).getDockerSessionFactories(tracer, clientFactory)
+    sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory)
       .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));
+
 
     return builder.build();
   }

@@ -118,6 +118,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   @Override
   public Optional<ActiveSession> apply(CreateSessionRequest sessionRequest) {
+    LOG.info("Processing session creation in SauceDockerSessionFactory for " + sessionRequest.getCapabilities());
     LOG.info("Starting session for " + sessionRequest.getCapabilities());
     int port = PortProber.findFreePort();
     URL remoteAddress = getUrl(port);

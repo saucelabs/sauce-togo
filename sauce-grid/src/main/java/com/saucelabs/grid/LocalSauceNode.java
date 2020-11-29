@@ -1,15 +1,20 @@
 package com.saucelabs.grid;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static org.openqa.selenium.OutputType.FILE;
 import static org.openqa.selenium.grid.data.Availability.DRAINING;
 import static org.openqa.selenium.grid.data.Availability.UP;
 import static org.openqa.selenium.grid.node.CapabilityResponseEncoder.getEncoder;
+import static org.openqa.selenium.json.Json.MAP_TYPE;
+import static org.openqa.selenium.json.Json.OBJECT_TYPE;
 import static org.openqa.selenium.remote.HttpSessionId.getSessionId;
 import static org.openqa.selenium.remote.RemoteTags.CAPABILITIES;
 import static org.openqa.selenium.remote.RemoteTags.SESSION_ID;
 import static org.openqa.selenium.remote.http.Contents.asJson;
 import static org.openqa.selenium.remote.http.Contents.string;
 import static org.openqa.selenium.remote.http.HttpMethod.DELETE;
+import static org.openqa.selenium.remote.http.HttpMethod.GET;
+import static org.openqa.selenium.remote.http.HttpMethod.POST;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Ticker;
@@ -17,6 +22,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 
 import org.openqa.selenium.Capabilities;
@@ -36,6 +42,7 @@ import org.openqa.selenium.grid.data.Session;
 import org.openqa.selenium.grid.data.SessionClosedEvent;
 import org.openqa.selenium.grid.data.Slot;
 import org.openqa.selenium.grid.data.SlotId;
+import org.openqa.selenium.grid.docker.DockerSessionAssetsPath;
 import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.HealthCheck;
 import org.openqa.selenium.grid.node.Node;
@@ -48,6 +55,7 @@ import org.openqa.selenium.io.TemporaryFilesystem;
 import org.openqa.selenium.io.Zip;
 import org.openqa.selenium.json.Json;
 import org.openqa.selenium.remote.SessionId;
+import org.openqa.selenium.remote.http.HttpMethod;
 import org.openqa.selenium.remote.http.HttpRequest;
 import org.openqa.selenium.remote.http.HttpResponse;
 import org.openqa.selenium.remote.tracing.AttributeKey;
@@ -62,6 +70,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -74,6 +86,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -90,6 +103,7 @@ public class LocalSauceNode extends Node {
   private final Cache<SessionId, TemporaryFilesystem> tempFileSystems;
   private final Regularly regularly;
   private final Secret registrationSecret;
+  private final DockerSessionAssetsPath assetsPath;
   private AtomicInteger pendingSessions = new AtomicInteger();
 
   private LocalSauceNode(
@@ -102,7 +116,8 @@ public class LocalSauceNode extends Node {
     Ticker ticker,
     Duration sessionTimeout,
     List<SessionSlot> factories,
-    Secret registrationSecret) {
+    Secret registrationSecret,
+    DockerSessionAssetsPath assetsPath) {
     super(tracer, new NodeId(UUID.randomUUID()), uri, registrationSecret);
 
     this.bus = Require.nonNull("Event bus", bus);
@@ -112,6 +127,7 @@ public class LocalSauceNode extends Node {
     this.maxSessionCount = Math.min(Require.positive("Max session count", maxSessionCount), factories.size());
     this.factories = ImmutableList.copyOf(factories);
     this.registrationSecret = Require.nonNull("Registration secret", registrationSecret);
+    this.assetsPath = Require.nonNull("Assets path", assetsPath);
 
     this.healthCheck = healthCheck == null ?
                        () -> new HealthCheck.Result(
@@ -302,9 +318,62 @@ public class LocalSauceNode extends Node {
     HttpResponse toReturn = slot.execute(req);
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
+    } else {
+      Optional<Path> screenshotsPath = this.assetsPath.createContainerSessionAssetsPath(id);
+      if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && screenshotsPath.isPresent()) {
+        HttpRequest screenshotRequest = new HttpRequest(GET, String.format("/session/%s/screenshot", id));
+        HttpResponse screenshotResponse = slot.execute(screenshotRequest);
+        SauceDockerSession session = (SauceDockerSession) slot.getSession();
+        String filePathPng = String.format(
+          "%s/screenshot_%s.png", screenshotsPath.get(), session.increaseScreenshotCount());
+        String screenshotContent = string(screenshotResponse).trim();
+        Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
+        String pngContent;
+        if (parsed.containsKey("value")) {
+          pngContent = (String) parsed.get("value");
+        } else {
+          pngContent = new Json().toType(screenshotContent, OBJECT_TYPE);
+        }
+        try {
+          Files.copy(
+            FILE.convertFromBase64Png(pngContent).toPath(),
+            Paths.get(filePathPng),
+            StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+          LOG.log(Level.WARNING, "Error saving screenshot", e);
+        }
+      }
     }
-    // Take screenshot here
     return toReturn;
+  }
+
+  private boolean shouldTakeScreenshot(HttpMethod httpMethod, String requestUri) {
+    // https://www.w3.org/TR/webdriver1/#list-of-endpoints
+    ImmutableListMultimap<String, HttpMethod> commandChangesPage =
+      ImmutableListMultimap.<String, HttpMethod>builder()
+        .put("/url", POST)
+        .put("/forward", POST)
+        .put("/back", POST)
+        .put("/refresh", POST)
+        .put("/execute", POST)
+        .put("/click", POST)
+        .put("/frame", POST)
+        .put("/parent", POST)
+        .put("/rect", POST)
+        .put("/maximize", POST)
+        .put("/minimize", POST)
+        .put("/fullscreen", POST)
+        .put("/clear", POST)
+        .put("/value", POST)
+        .put("/actions", POST)
+        .put("/alert", POST)
+        .put("/window", POST)
+        .put("/window", DELETE)
+        .build();
+    return commandChangesPage
+      .entries()
+      .stream()
+      .anyMatch(pair -> pair.getValue().equals(httpMethod) && requestUri.contains(pair.getKey()));
   }
 
   @Override
@@ -457,8 +526,9 @@ public class LocalSauceNode extends Node {
     EventBus bus,
     URI uri,
     URI gridUri,
-    Secret registrationSecret) {
-    return new LocalSauceNode.Builder(tracer, bus, uri, gridUri, registrationSecret);
+    Secret registrationSecret,
+    DockerSessionAssetsPath assetsPath) {
+    return new LocalSauceNode.Builder(tracer, bus, uri, gridUri, registrationSecret, assetsPath);
   }
 
   public static class Builder {
@@ -469,6 +539,7 @@ public class LocalSauceNode extends Node {
     private final URI gridUri;
     private final Secret registrationSecret;
     private final ImmutableList.Builder<SessionSlot> factories;
+    private final DockerSessionAssetsPath assetsPath;
     private int maxCount = Runtime.getRuntime().availableProcessors() * 5;
     private Ticker ticker = Ticker.systemTicker();
     private Duration sessionTimeout = Duration.ofMinutes(5);
@@ -479,12 +550,14 @@ public class LocalSauceNode extends Node {
       EventBus bus,
       URI uri,
       URI gridUri,
-      Secret registrationSecret) {
+      Secret registrationSecret,
+      DockerSessionAssetsPath assetsPath) {
       this.tracer = Require.nonNull("Tracer", tracer);
       this.bus = Require.nonNull("Event bus", bus);
       this.uri = Require.nonNull("Remote node URI", uri);
       this.gridUri = Require.nonNull("Grid URI", gridUri);
       this.registrationSecret = Require.nonNull("Registration secret", registrationSecret);
+      this.assetsPath = Require.nonNull("Assets path", assetsPath);
       this.factories = ImmutableList.builder();
     }
 
@@ -518,7 +591,8 @@ public class LocalSauceNode extends Node {
         ticker,
         sessionTimeout,
         factories.build(),
-        registrationSecret);
+        registrationSecret,
+        assetsPath);
     }
 
     public LocalSauceNode.Builder.Advanced advanced() {

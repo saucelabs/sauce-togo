@@ -131,9 +131,12 @@ public class SauceDockerSessionFactory implements SessionFactory {
       LOG.info("Creating container, mapping container port 4444 to " + port);
       Map<String, String> browserContainerEnvVars =
         getBrowserContainerEnvVars(sessionRequest.getCapabilities());
+      Map<String, String> devShm =
+        Collections.singletonMap("/dev/shm", "/dev/shm");
       Container container = docker.create(
         image(browserImage)
           .env(browserContainerEnvVars)
+          .bind(devShm)
           .map(Port.tcp(4444), Port.tcp(port)));
       container.start();
       ContainerInfo containerInfo = container.inspect();

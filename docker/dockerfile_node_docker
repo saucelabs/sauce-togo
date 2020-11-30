@@ -1,0 +1,1 @@
+FROM selenium/node-docker:4.0.0-beta-1-prerelease-20201130

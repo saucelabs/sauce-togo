@@ -236,7 +236,8 @@ public class SauceDockerSessionFactory implements SessionFactory {
         capabilities,
         downstream,
         result.getDialect(),
-        Instant.now()));
+        Instant.now(),
+        assetsPath));
     }
   }
 

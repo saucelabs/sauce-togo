@@ -103,7 +103,6 @@ public class LocalSauceNode extends Node {
   private final Cache<SessionId, TemporaryFilesystem> tempFileSystems;
   private final Regularly regularly;
   private final Secret registrationSecret;
-  private final DockerSessionAssetsPath assetsPath;
   private AtomicInteger pendingSessions = new AtomicInteger();
 
   private LocalSauceNode(
@@ -116,8 +115,7 @@ public class LocalSauceNode extends Node {
     Ticker ticker,
     Duration sessionTimeout,
     List<SessionSlot> factories,
-    Secret registrationSecret,
-    DockerSessionAssetsPath assetsPath) {
+    Secret registrationSecret) {
     super(tracer, new NodeId(UUID.randomUUID()), uri, registrationSecret);
 
     this.bus = Require.nonNull("Event bus", bus);
@@ -127,7 +125,6 @@ public class LocalSauceNode extends Node {
     this.maxSessionCount = Math.min(Require.positive("Max session count", maxSessionCount), factories.size());
     this.factories = ImmutableList.copyOf(factories);
     this.registrationSecret = Require.nonNull("Registration secret", registrationSecret);
-    this.assetsPath = Require.nonNull("Assets path", assetsPath);
 
     this.healthCheck = healthCheck == null ?
                        () -> new HealthCheck.Result(
@@ -319,11 +316,11 @@ public class LocalSauceNode extends Node {
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
     } else {
-      Optional<Path> screenshotsPath = this.assetsPath.createContainerSessionAssetsPath(id);
+      SauceDockerSession session = (SauceDockerSession) slot.getSession();
+      Optional<Path> screenshotsPath = session.getAssetsPath().createContainerSessionAssetsPath(id);
       if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && screenshotsPath.isPresent()) {
         HttpRequest screenshotRequest = new HttpRequest(GET, String.format("/session/%s/screenshot", id));
         HttpResponse screenshotResponse = slot.execute(screenshotRequest);
-        SauceDockerSession session = (SauceDockerSession) slot.getSession();
         String filePathPng = String.format(
           "%s/screenshot_%s.png", screenshotsPath.get(), session.increaseScreenshotCount());
         String screenshotContent = string(screenshotResponse).trim();
@@ -539,7 +536,6 @@ public class LocalSauceNode extends Node {
     private final URI gridUri;
     private final Secret registrationSecret;
     private final ImmutableList.Builder<SessionSlot> factories;
-    private final DockerSessionAssetsPath assetsPath;
     private int maxCount = Runtime.getRuntime().availableProcessors() * 5;
     private Ticker ticker = Ticker.systemTicker();
     private Duration sessionTimeout = Duration.ofMinutes(5);
@@ -557,7 +553,6 @@ public class LocalSauceNode extends Node {
       this.uri = Require.nonNull("Remote node URI", uri);
       this.gridUri = Require.nonNull("Grid URI", gridUri);
       this.registrationSecret = Require.nonNull("Registration secret", registrationSecret);
-      this.assetsPath = Require.nonNull("Assets path", assetsPath);
       this.factories = ImmutableList.builder();
     }
 
@@ -591,8 +586,7 @@ public class LocalSauceNode extends Node {
         ticker,
         sessionTimeout,
         factories.build(),
-        registrationSecret,
-        assetsPath);
+        registrationSecret);
     }
 
     public LocalSauceNode.Builder.Advanced advanced() {

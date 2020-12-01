@@ -322,7 +322,7 @@ public class LocalSauceNode extends Node {
         HttpRequest screenshotRequest = new HttpRequest(GET, String.format("/session/%s/screenshot", id));
         HttpResponse screenshotResponse = slot.execute(screenshotRequest);
         String filePathPng = String.format(
-          "%s/screenshot_%s.png", screenshotsPath.get(), session.increaseScreenshotCount());
+          "%s/%s%s.png", screenshotsPath.get(), session.increaseScreenshotCount(), "screenshot");
         String screenshotContent = string(screenshotResponse).trim();
         Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
         String pngContent;

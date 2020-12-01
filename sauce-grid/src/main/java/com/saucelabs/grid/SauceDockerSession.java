@@ -49,8 +49,9 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.screenshotCount = new AtomicInteger(0);
   }
 
-  public int increaseScreenshotCount() {
-    return screenshotCount.incrementAndGet();
+  public String increaseScreenshotCount() {
+    String screenshotCount = String.valueOf(this.screenshotCount.getAndIncrement());
+    return ("0000" + screenshotCount).substring(screenshotCount.length());
   }
 
   public DockerSessionAssetsPath getAssetsPath() {

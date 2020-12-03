@@ -1,12 +1,16 @@
 package com.saucelabs.grid;
 
 import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.ImmutableCapabilities;
+import org.openqa.selenium.MutableCapabilities;
+import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.docker.Container;
 import org.openqa.selenium.grid.docker.DockerSessionAssetsPath;
 import org.openqa.selenium.grid.node.ProtocolConvertingSession;
 import org.openqa.selenium.internal.Require;
 import org.openqa.selenium.json.Json;
 import org.openqa.selenium.remote.Dialect;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.remote.SessionId;
 import org.openqa.selenium.remote.http.HttpClient;
 import org.openqa.selenium.remote.tracing.Tracer;
@@ -18,6 +22,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -88,9 +93,25 @@ public class SauceDockerSession extends ProtocolConvertingSession {
         Files.write(Paths.get(seleniumServerLog), logs);
         Files.write(Paths.get(logJson), new Json().toJson(webDriverCommands).getBytes());
       } catch (Exception e) {
-        LOG.log(Level.WARNING, "Error saving Selenium Server log", e);
+        LOG.log(Level.WARNING, "Error saving logs", e);
       }
     }
     container.stop(Duration.ofMinutes(1));
+    if (!logs.isEmpty()) {
+      try {
+        Object rawSeleniumOptions = getCapabilities().getCapability("se:options");
+        HashMap<String, Object > sauceCaps =
+          new HashMap<>(ImmutableCapabilities.copyOf(getCapabilities()).asMap());
+        sauceCaps.remove("se:options");
+        sauceCaps.put("sauce:options", rawSeleniumOptions);
+        URL sauceUrl = new URL("https://ondemand.us-west-1.saucelabs.com:443/wd/hub");
+        new RemoteWebDriver(sauceUrl, new MutableCapabilities(sauceCaps));
+        // TODO Get session ID from Sauce Labs
+      } catch (SessionNotCreatedException e) {
+        LOG.log(Level.FINE, "Error creating session in Sauce Labs", e);
+      } catch (Exception e) {
+        LOG.log(Level.WARNING, "Error creating session in Sauce Labs", e);
+      }
+    }
   }
 }

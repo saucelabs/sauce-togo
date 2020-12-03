@@ -12,7 +12,7 @@ import org.openqa.selenium.remote.http.HttpClient;
 import org.openqa.selenium.remote.tracing.Tracer;
 
 @SuppressWarnings("unused")
-public class LocalSauceNodeFactory {
+public class SauceNodeFactory {
 
   public static Node create(Config config) {
     LoggingOptions loggingOptions = new LoggingOptions(config);
@@ -27,13 +27,12 @@ public class LocalSauceNodeFactory {
 
     SauceDockerOptions sauceDockerOptions = new SauceDockerOptions(config);
 
-    LocalSauceNode.Builder builder = LocalSauceNode.builder(
+    SauceNode.Builder builder = SauceNode.builder(
       tracer,
       eventOptions.getEventBus(),
       serverOptions.getExternalUri(),
       nodeOptions.getPublicGridUri().orElseGet(serverOptions::getExternalUri),
-      secretOptions.getRegistrationSecret(),
-      sauceDockerOptions.getAssetsPath());
+      secretOptions.getRegistrationSecret());
 
     sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory)
       .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));

@@ -5,6 +5,7 @@ import static org.openqa.selenium.docker.ContainerConfig.image;
 import static org.openqa.selenium.remote.Dialect.W3C;
 import static org.openqa.selenium.remote.http.Contents.string;
 import static org.openqa.selenium.remote.http.HttpMethod.GET;
+import static org.openqa.selenium.remote.http.HttpMethod.POST;
 import static org.openqa.selenium.remote.tracing.Tags.EXCEPTION;
 
 import org.openqa.selenium.Capabilities;
@@ -173,6 +174,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
         DriverCommand.NEW_SESSION(sessionRequest.getCapabilities()));
       ProtocolHandshake.Result result;
       Response response;
+      Instant startTime = Instant.now();
       try {
         result = new ProtocolHandshake().createSession(client, command);
         response = result.createResponse();
@@ -192,12 +194,12 @@ public class SauceDockerSessionFactory implements SessionFactory {
         LOG.log(Level.WARNING, "Unable to create session: " + e.getMessage(), e);
         return Optional.empty();
       }
-
       SessionId id = new SessionId(response.getSessionId());
       Capabilities capabilities = new ImmutableCapabilities((Map<?, ?>) response.getValue());
+      Capabilities mergedCapabilities = capabilities.merge(sessionRequest.getCapabilities());
       Container videoContainer = null;
+      Instant videoStartTime = Instant.now();
       if (isVideoRecordingAvailable) {
-        Capabilities mergedCapabilities = capabilities.merge(sessionRequest.getCapabilities());
         Optional<Path> containerAssetsPath = assetsPath.createContainerSessionAssetsPath(id);
         containerAssetsPath.ifPresent(path -> saveSessionCapabilities(mergedCapabilities, path));
         if (containerAssetsPath.isPresent() && recordVideoForSession(mergedCapabilities)) {
@@ -219,6 +221,18 @@ public class SauceDockerSessionFactory implements SessionFactory {
       attributeMap.put(AttributeKey.DOWNSTREAM_DIALECT.getKey(), EventAttribute.setValue(downstream.toString()));
       attributeMap.put(AttributeKey.DRIVER_RESPONSE.getKey(), EventAttribute.setValue(response.toString()));
 
+      SauceCommandInfo commandInfo = new SauceCommandInfo.Builder()
+        .setStartTime(startTime.getEpochSecond())
+        .setVideoStartTime(videoStartTime.getEpochSecond())
+        .setEndTime(Instant.now().getEpochSecond())
+        .setRequest(sessionRequest.getCapabilities())
+        .setResult(mergedCapabilities)
+        .setPath("/session")
+        .setHttpStatus(response.getStatus())
+        .setHttpMethod(POST.name())
+        .setStatusCode(0)
+        .build();
+
       span.addEvent("Docker driver service created session", attributeMap);
       LOG.fine(String.format(
         "Created session: %s - %s (container id: %s)",
@@ -233,11 +247,12 @@ public class SauceDockerSessionFactory implements SessionFactory {
         id,
         remoteAddress,
         stereotype,
-        capabilities,
+        mergedCapabilities,
         downstream,
         result.getDialect(),
-        Instant.now(),
-        assetsPath));
+        startTime,
+        assetsPath,
+        commandInfo));
     }
   }
 

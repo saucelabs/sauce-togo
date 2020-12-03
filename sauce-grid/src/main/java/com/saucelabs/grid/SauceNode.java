@@ -42,7 +42,6 @@ import org.openqa.selenium.grid.data.Session;
 import org.openqa.selenium.grid.data.SessionClosedEvent;
 import org.openqa.selenium.grid.data.Slot;
 import org.openqa.selenium.grid.data.SlotId;
-import org.openqa.selenium.grid.docker.DockerSessionAssetsPath;
 import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.HealthCheck;
 import org.openqa.selenium.grid.node.Node;
@@ -90,7 +89,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class LocalSauceNode extends Node {
+public class SauceNode extends Node {
   private static final Json JSON = new Json();
   private static final Logger LOG = Logger.getLogger(LocalNode.class.getName());
   private final EventBus bus;
@@ -105,7 +104,7 @@ public class LocalSauceNode extends Node {
   private final Secret registrationSecret;
   private AtomicInteger pendingSessions = new AtomicInteger();
 
-  private LocalSauceNode(
+  private SauceNode(
     Tracer tracer,
     EventBus bus,
     URI uri,
@@ -312,17 +311,22 @@ public class LocalSauceNode extends Node {
       throw new NoSuchSessionException("Cannot find session with id: " + id);
     }
 
+    SauceDockerSession session = (SauceDockerSession) slot.getSession();
+    SauceCommandInfo.Builder builder = new SauceCommandInfo.Builder();
+    builder.setStartTime(Instant.now().getEpochSecond());
     HttpResponse toReturn = slot.execute(req);
+
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
     } else {
-      SauceDockerSession session = (SauceDockerSession) slot.getSession();
       Optional<Path> screenshotsPath = session.getAssetsPath().createContainerSessionAssetsPath(id);
       if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && screenshotsPath.isPresent()) {
         HttpRequest screenshotRequest = new HttpRequest(GET, String.format("/session/%s/screenshot", id));
         HttpResponse screenshotResponse = slot.execute(screenshotRequest);
+        int screenshotId = session.increaseScreenshotCount();
+        builder.setScreenshotId(screenshotId);
         String filePathPng = String.format(
-          "%s/%s%s.png", screenshotsPath.get(), session.increaseScreenshotCount(), "screenshot");
+          "%s/%s%s.png", screenshotsPath.get(), formatScreenshotId(screenshotId), "screenshot");
         String screenshotContent = string(screenshotResponse).trim();
         Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
         String pngContent;
@@ -341,7 +345,26 @@ public class LocalSauceNode extends Node {
         }
       }
     }
+    String responseContent = string(toReturn);
+    Map<String, Object> responseParsed = new Json().toType(responseContent, MAP_TYPE);
+    builder.setEndTime(Instant.now().getEpochSecond())
+      .setRequest(string(req))
+      .setResult(responseContent)
+      .setPath(req.getUri())
+      .setHttpStatus(toReturn.getStatus())
+      .setHttpMethod(req.getMethod().name())
+      .setStatusCode(0);
+    if (responseParsed.containsKey("value") && responseParsed.get("value") != null
+        && responseParsed.get("value").toString().contains("error")) {
+      builder.setStatusCode(1);
+    }
+    session.addSauceCommandInfo(builder.build());
     return toReturn;
+  }
+
+  private String formatScreenshotId(int count) {
+    String screenshotCount = String.valueOf(count);
+    return ("0000" + screenshotCount).substring(screenshotCount.length());
   }
 
   private boolean shouldTakeScreenshot(HttpMethod httpMethod, String requestUri) {
@@ -518,14 +541,13 @@ public class LocalSauceNode extends Node {
         .collect(Collectors.toSet()));
   }
 
-  public static LocalSauceNode.Builder builder(
+  public static SauceNode.Builder builder(
     Tracer tracer,
     EventBus bus,
     URI uri,
     URI gridUri,
-    Secret registrationSecret,
-    DockerSessionAssetsPath assetsPath) {
-    return new LocalSauceNode.Builder(tracer, bus, uri, gridUri, registrationSecret, assetsPath);
+    Secret registrationSecret) {
+    return new SauceNode.Builder(tracer, bus, uri, gridUri, registrationSecret);
   }
 
   public static class Builder {
@@ -546,8 +568,7 @@ public class LocalSauceNode extends Node {
       EventBus bus,
       URI uri,
       URI gridUri,
-      Secret registrationSecret,
-      DockerSessionAssetsPath assetsPath) {
+      Secret registrationSecret) {
       this.tracer = Require.nonNull("Tracer", tracer);
       this.bus = Require.nonNull("Event bus", bus);
       this.uri = Require.nonNull("Remote node URI", uri);
@@ -556,7 +577,7 @@ public class LocalSauceNode extends Node {
       this.factories = ImmutableList.builder();
     }
 
-    public LocalSauceNode.Builder add(Capabilities stereotype, SessionFactory factory) {
+    public SauceNode.Builder add(Capabilities stereotype, SessionFactory factory) {
       Require.nonNull("Capabilities", stereotype);
       Require.nonNull("Session factory", factory);
 
@@ -565,18 +586,18 @@ public class LocalSauceNode extends Node {
       return this;
     }
 
-    public LocalSauceNode.Builder maximumConcurrentSessions(int maxCount) {
+    public SauceNode.Builder maximumConcurrentSessions(int maxCount) {
       this.maxCount = Require.positive("Max session count", maxCount);
       return this;
     }
 
-    public LocalSauceNode.Builder sessionTimeout(Duration timeout) {
+    public SauceNode.Builder sessionTimeout(Duration timeout) {
       sessionTimeout = timeout;
       return this;
     }
 
-    public LocalSauceNode build() {
-      return new LocalSauceNode(
+    public SauceNode build() {
+      return new SauceNode(
         tracer,
         bus,
         uri,
@@ -589,13 +610,13 @@ public class LocalSauceNode extends Node {
         registrationSecret);
     }
 
-    public LocalSauceNode.Builder.Advanced advanced() {
+    public SauceNode.Builder.Advanced advanced() {
       return new Advanced();
     }
 
     public class Advanced {
 
-      public LocalSauceNode.Builder.Advanced clock(Clock clock) {
+      public SauceNode.Builder.Advanced clock(Clock clock) {
         ticker = new Ticker() {
           @Override
           public long read() {
@@ -605,13 +626,13 @@ public class LocalSauceNode extends Node {
         return this;
       }
 
-      public LocalSauceNode.Builder.Advanced healthCheck(HealthCheck healthCheck) {
-        LocalSauceNode.Builder.this.healthCheck = Require.nonNull("Health check", healthCheck);
+      public SauceNode.Builder.Advanced healthCheck(HealthCheck healthCheck) {
+        SauceNode.Builder.this.healthCheck = Require.nonNull("Health check", healthCheck);
         return this;
       }
 
       public Node build() {
-        return LocalSauceNode.Builder.this.build();
+        return SauceNode.Builder.this.build();
       }
     }
   }

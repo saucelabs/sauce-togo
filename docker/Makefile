@@ -22,12 +22,6 @@ standalone_firefox:
 standalone_chrome:
 	docker build --no-cache  -t saucelabs/standalone-chrome:$(TAG) -f dockerfile_standalone_chrome .
 
-node_firefox:
-	docker build --no-cache  -t saucelabs/node-firefox:$(TAG) -f dockerfile_node_firefox .
-
-node_chrome:
-	docker build --no-cache  -t saucelabs/node-chrome:$(TAG) -f dockerfile_node_chrome .
-
 event_bus:
 	docker pull selenium/event-bus:$(TAG) && docker tag selenium/event-bus:$(TAG) saucelabs/event-bus:$(TAG)
 

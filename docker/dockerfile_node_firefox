@@ -1,6 +1,0 @@
-FROM selenium/node-firefox:4.0.0-beta-1-prerelease-20201130
-
-#==============================
-# Sauce Labs logo as wallpaper for Fluxbox
-#==============================
-COPY saucelabs_logo_red_bolt.png /usr/share/images/fluxbox/ubuntu-light.png

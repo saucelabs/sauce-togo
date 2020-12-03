@@ -1,4 +1,4 @@
-FROM selenium/standalone-chrome:4.0.0-beta-1-prerelease-20201130
+FROM selenium/standalone-chrome:4.0.0-beta-1-prerelease-20201202
 
 #==============================
 # Sauce Labs logo as wallpaper for Fluxbox

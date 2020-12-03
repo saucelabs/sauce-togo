@@ -1,11 +1,9 @@
-TAG := $(or $(TAG),$(TAG),4.0.0-beta-1-prerelease-20201130)
-VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20201130)
+TAG := $(or $(TAG),$(TAG),4.0.0-beta-1-prerelease-20201202)
+VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20201202)
 
 all: video \
 	standalone_firefox \
 	standalone_chrome \
-	node_firefox \
-	node_chrome \
 	event_bus \
 	session_queuer \
 	sessions \

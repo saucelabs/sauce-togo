@@ -17,16 +17,29 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class Main {
 
-  private static final String ASSETS_PATH = "/opt/selenium/assets";
-  private static final String LOCAL_SESSION_ID = System.getenv("LOCAL_SESSION_ID");
+  private static final Logger LOG = Logger.getLogger(Main.class.getName());
+
+  private static final String ASSETS_PATH =
+    System.getenv().getOrDefault("ASSETS_PATH", "/opt/selenium/assets");
+  private static final String SAUCE_API_HOST =
+    System.getenv().getOrDefault("SAUCE_API_HOST", "api.us-west-1.saucelabs.com");
   private static final String SAUCE_JOB_ID = System.getenv("SAUCE_JOB_ID");
+
+  private static final String SAUCE_API_URL =
+    System.getenv()
+      .getOrDefault(
+        "SAUCE_API_URL",
+        String.format("https://%s/v1/testrunner/jobs/%s/assets", SAUCE_API_HOST, SAUCE_JOB_ID));
+
+  private static final String LOCAL_SESSION_ID = System.getenv("LOCAL_SESSION_ID");
   private static final String SAUCE_USER_NAME = System.getenv("SAUCE_USERNAME");
   private static final String SAUCE_ACCESS_KEY = System.getenv("SAUCE_ACCESS_KEY");
-  private static final String SAUCE_API_HOST = System.getenv("SAUCE_API_HOST");
 
   public static void main(String[] args) {
     String sessionAssetsPath = ASSETS_PATH + File.separator + LOCAL_SESSION_ID;
@@ -40,14 +53,9 @@ public class Main {
   }
 
   public static void uploadFile(File fileToUpload, ContentType fileContentType) {
-    String apiUrl =
-      String.format(
-        "https://%s/v1/testrunner/jobs/%s/assets",
-        SAUCE_API_HOST,
-        SAUCE_JOB_ID);
-
     try (CloseableHttpClient client = HttpClients.createDefault()) {
-      HttpPut httpPut = new HttpPut(apiUrl);
+      LOG.info(String.format("Uploading %s to %s", fileToUpload.getAbsolutePath(), SAUCE_API_URL));
+      HttpPut httpPut = new HttpPut(SAUCE_API_URL);
       HttpEntity httpEntity = MultipartEntityBuilder
         .create()
         .addBinaryBody("file[]", fileToUpload, fileContentType, fileToUpload.getName())
@@ -65,7 +73,7 @@ public class Main {
         System.out.println(collect);
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      LOG.log(Level.WARNING, "Issue while uploading " + fileToUpload.getAbsolutePath(), e);
     }
   }
 

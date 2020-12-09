@@ -5,7 +5,7 @@ import org.openqa.selenium.ImmutableCapabilities;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.docker.Container;
-import org.openqa.selenium.grid.docker.DockerSessionAssetsPath;
+import org.openqa.selenium.grid.docker.DockerAssetsPath;
 import org.openqa.selenium.grid.node.ProtocolConvertingSession;
 import org.openqa.selenium.internal.Require;
 import org.openqa.selenium.json.Json;
@@ -17,14 +17,12 @@ import org.openqa.selenium.remote.tracing.Tracer;
 
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,7 +32,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private final Container container;
   private final Container videoContainer;
   private final AtomicInteger screenshotCount;
-  private final DockerSessionAssetsPath assetsPath;
+  private final DockerAssetsPath assetsPath;
   private final List<SauceCommandInfo> webDriverCommands;
 
   SauceDockerSession(
@@ -49,7 +47,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     Dialect downstream,
     Dialect upstream,
     Instant startTime,
-    DockerSessionAssetsPath assetsPath,
+    DockerAssetsPath assetsPath,
     SauceCommandInfo firstCommand) {
     super(tracer, client, id, url, downstream, upstream, stereotype, capabilities, startTime);
     this.container = Require.nonNull("Container", container);
@@ -75,7 +73,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.webDriverCommands.add(commandInfo);
   }
 
-  public DockerSessionAssetsPath getAssetsPath() {
+  public DockerAssetsPath getAssetsPath() {
     return assetsPath;
   }
 
@@ -85,10 +83,10 @@ public class SauceDockerSession extends ProtocolConvertingSession {
       videoContainer.stop(Duration.ofSeconds(10));
     }
     List<String> logs = container.getLogs().getLogs();
-    Optional<Path> logsPath = assetsPath.createContainerSessionAssetsPath(getId());
-    if (logsPath.isPresent() && !logs.isEmpty()) {
-      String seleniumServerLog = String.format("%s/selenium-server.log", logsPath.get());
-      String logJson = String.format("%s/log.json", logsPath.get());
+    if (!logs.isEmpty()) {
+      String sessionAssetsPath = assetsPath.getContainerPath(getId());
+      String seleniumServerLog = String.format("%s/selenium-server.log", sessionAssetsPath);
+      String logJson = String.format("%s/log.json", sessionAssetsPath);
       try {
         Files.write(Paths.get(seleniumServerLog), logs);
         Files.write(Paths.get(logJson), new Json().toJson(webDriverCommands).getBytes());

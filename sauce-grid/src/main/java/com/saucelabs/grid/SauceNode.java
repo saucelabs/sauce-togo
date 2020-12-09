@@ -1,6 +1,7 @@
 package com.saucelabs.grid;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static java.util.Optional.ofNullable;
 import static org.openqa.selenium.OutputType.FILE;
 import static org.openqa.selenium.grid.data.Availability.DRAINING;
 import static org.openqa.selenium.grid.data.Availability.UP;
@@ -42,6 +43,7 @@ import org.openqa.selenium.grid.data.Session;
 import org.openqa.selenium.grid.data.SessionClosedEvent;
 import org.openqa.selenium.grid.data.Slot;
 import org.openqa.selenium.grid.data.SlotId;
+import org.openqa.selenium.grid.docker.DockerAssetsPath;
 import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.HealthCheck;
 import org.openqa.selenium.grid.node.Node;
@@ -70,7 +72,6 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Clock;
@@ -319,14 +320,18 @@ public class SauceNode extends Node {
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
     } else {
-      Optional<Path> screenshotsPath = session.getAssetsPath().createContainerSessionAssetsPath(id);
-      if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && screenshotsPath.isPresent()) {
+      Optional<DockerAssetsPath> path = ofNullable(session.getAssetsPath());
+      if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && path.isPresent()) {
         HttpRequest screenshotRequest = new HttpRequest(GET, String.format("/session/%s/screenshot", id));
         HttpResponse screenshotResponse = slot.execute(screenshotRequest);
         int screenshotId = session.increaseScreenshotCount();
         builder.setScreenshotId(screenshotId);
+        String containerPath = path.get().getContainerPath(id);
         String filePathPng = String.format(
-          "%s/%s%s.png", screenshotsPath.get(), formatScreenshotId(screenshotId), "screenshot");
+          "%s/%s%s.png",
+          containerPath,
+          formatScreenshotId(screenshotId),
+          "screenshot");
         String screenshotContent = string(screenshotResponse).trim();
         Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
         String pngContent;
@@ -336,6 +341,7 @@ public class SauceNode extends Node {
           pngContent = new Json().toType(screenshotContent, OBJECT_TYPE);
         }
         try {
+          Files.createDirectories(Paths.get(containerPath));
           Files.copy(
             FILE.convertFromBase64Png(pngContent).toPath(),
             Paths.get(filePathPng),

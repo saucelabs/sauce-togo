@@ -324,9 +324,13 @@ public class SauceDockerSessionFactory implements SessionFactory {
   }
 
   private boolean recordVideoForSession(Capabilities sessionRequestCapabilities) {
-    Optional<Object> recordVideo =
+    boolean recordVideo = true;
+    Optional<Object> recordVideoCapability =
       ofNullable(getCapability(sessionRequestCapabilities, "recordVideo"));
-    return recordVideo.isPresent() && Boolean.parseBoolean(recordVideo.get().toString());
+    if (recordVideoCapability.isPresent()) {
+      recordVideo = Boolean.parseBoolean(recordVideoCapability.get().toString());
+    }
+    return recordVideo;
   }
 
   private Object getCapability(Capabilities sessionRequestCapabilities, String capabilityName) {

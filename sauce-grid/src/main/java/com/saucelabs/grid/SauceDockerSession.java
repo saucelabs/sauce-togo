@@ -3,6 +3,7 @@ package com.saucelabs.grid;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.ImmutableCapabilities;
 import org.openqa.selenium.MutableCapabilities;
+import org.openqa.selenium.PersistentCapabilities;
 import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.docker.Container;
 import org.openqa.selenium.grid.docker.DockerAssetsPath;
@@ -23,6 +24,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,13 +100,21 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     container.stop(Duration.ofMinutes(1));
     if (!logs.isEmpty()) {
       try {
-        Object rawSeleniumOptions = getCapabilities().getCapability("se:options");
-        HashMap<String, Object > sauceCaps =
-          new HashMap<>(ImmutableCapabilities.copyOf(getCapabilities()).asMap());
-        sauceCaps.remove("se:options");
-        sauceCaps.put("sauce:options", rawSeleniumOptions);
+        String errorRemovalCapability = "devX";
+        String sauceOptions = "sauce:options";
+        Capabilities toUse = ImmutableCapabilities.copyOf(getCapabilities());
+        Object rawSeleniumOptions = getCapabilities().getCapability(sauceOptions);
+        if (rawSeleniumOptions instanceof Map) {
+          @SuppressWarnings("unchecked")
+          Map<String, Object> original = (Map<String, Object>) rawSeleniumOptions;
+          Map<String, Object> updated = new TreeMap<>(original);
+          if (!updated.containsKey(errorRemovalCapability)) {
+            updated.put(errorRemovalCapability, true);
+          }
+          toUse = new PersistentCapabilities(toUse).setCapability(sauceOptions, updated);
+        }
         URL sauceUrl = new URL("https://ondemand.us-west-1.saucelabs.com:443/wd/hub");
-        new RemoteWebDriver(sauceUrl, new MutableCapabilities(sauceCaps));
+        new RemoteWebDriver(sauceUrl, new MutableCapabilities(toUse));
         // TODO Get session ID from Sauce Labs
       } catch (SessionNotCreatedException e) {
         LOG.log(Level.FINE, "Error creating session in Sauce Labs", e);

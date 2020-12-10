@@ -330,7 +330,8 @@ public class SauceDockerSessionFactory implements SessionFactory {
   }
 
   private Object getCapability(Capabilities sessionRequestCapabilities, String capabilityName) {
-    Object rawSeleniumOptions = sessionRequestCapabilities.getCapability("se:options");
+    Object rawSeleniumOptions =
+      sessionRequestCapabilities.getCapability("sauce:options");
     if (rawSeleniumOptions instanceof Map) {
       @SuppressWarnings("unchecked")
       Map<String, Object> seleniumOptions = (Map<String, Object>) rawSeleniumOptions;

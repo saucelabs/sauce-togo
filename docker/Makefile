@@ -3,6 +3,8 @@ VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20201208)
 
 all: video \
 	video_latest \
+	node_docker \
+	standalone_docker \
 	standalone_firefox \
 	standalone_chrome \
 	event_bus \
@@ -17,6 +19,12 @@ video:
 
 video_latest:
 	docker pull selenium/video:$(VIDEO_TAG) && docker tag selenium/video:$(VIDEO_TAG) saucelabs/video:latest
+
+node_docker:
+	docker build --no-cache -t saucelabs/node-docker:$(TAG) -f dockerfile_node_docker .
+
+standalone_docker:
+	docker build --no-cache -t saucelabs/standalone-docker:$(TAG) -f dockerfile_standalone_docker .
 
 standalone_firefox:
 	docker build --no-cache -t saucelabs/standalone-firefox:$(TAG) -f dockerfile_standalone_firefox .

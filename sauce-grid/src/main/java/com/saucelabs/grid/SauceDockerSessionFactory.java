@@ -227,6 +227,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
         .setHttpStatus(response.getStatus())
         .setHttpMethod(POST.name())
         .setStatusCode(0)
+        .setScreenshotId(-1)
         .build();
 
       span.addEvent("Docker driver service created session", attributeMap);

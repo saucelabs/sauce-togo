@@ -57,7 +57,7 @@ public class SauceCommandInfo {
     long commandDuration = this.endTime - this.startTime;
     long inVideoTimeline = this.startTime + (commandDuration / 2) - this.videoStartTime;
     return ImmutableMap.<String, Object>builder()
-      .put("screenshot", this.screenshotId)
+      .put("screenshot", this.screenshotId == -1 ? "null" : this.screenshotId)
       .put("suggestion_values", this.suggestionValues)
       .put("start_time", this.startTime)
       .put("request", this.request)

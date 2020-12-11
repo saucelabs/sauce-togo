@@ -6,6 +6,7 @@ import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.ImmutableCapabilities;
 import org.openqa.selenium.PersistentCapabilities;
 import org.openqa.selenium.SessionNotCreatedException;
+import org.openqa.selenium.UsernameAndPassword;
 import org.openqa.selenium.docker.Container;
 import org.openqa.selenium.docker.Docker;
 import org.openqa.selenium.docker.Image;
@@ -47,8 +48,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private final AtomicInteger screenshotCount;
   private final DockerAssetsPath assetsPath;
   private final List<SauceCommandInfo> webDriverCommands;
-  private String userName;
-  private String accessKey;
+  private final UsernameAndPassword usernameAndPassword;
 
   SauceDockerSession(
     Container container,
@@ -63,6 +63,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     Dialect upstream,
     Instant startTime,
     DockerAssetsPath assetsPath,
+    UsernameAndPassword usernameAndPassword,
     SauceCommandInfo firstCommand,
     Docker docker) {
     super(tracer, client, id, url, downstream, upstream, stereotype, capabilities, startTime);
@@ -70,6 +71,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.videoContainer = videoContainer;
     this.assetsPath = Require.nonNull("Assets path", assetsPath);
     this.screenshotCount = new AtomicInteger(0);
+    this.usernameAndPassword = Require.nonNull("Sauce user & key", usernameAndPassword);
     this.webDriverCommands = new ArrayList<>();
     this.webDriverCommands.add(firstCommand);
     this.docker = Require.nonNull("Docker", docker);
@@ -114,7 +116,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     container.stop(Duration.ofMinutes(1));
     if (!logs.isEmpty()) {
       createSauceJob();
-      String sauceJobId = getSauceJob(userName, accessKey);
+      String sauceJobId = getSauceJob();
       Container assetUploaderContainer = createAssetUploaderContainer(sauceJobId);
       assetUploaderContainer.start();
     }
@@ -129,10 +131,9 @@ public class SauceDockerSession extends ProtocolConvertingSession {
         @SuppressWarnings("unchecked")
         Map<String, Object> original = (Map<String, Object>) rawSauceOptions;
         Map<String, Object> updated = new TreeMap<>(original);
-        userName = String.valueOf(updated.get("username"));
-        accessKey = String.valueOf(updated.get("accessKey"));
         // Adding the local session id, so we can match it when retrieving the job from Sauce
         updated.put("diySessionId", getId());
+        updated.put("accessKey", usernameAndPassword.password());
         toUse = new PersistentCapabilities(toUse).setCapability(sauceOptions, updated);
         URL sauceUrl = new URL("https://ondemand.us-west-1.saucelabs.com:443/wd/hub");
         new RemoteWebDriver(sauceUrl, toUse);
@@ -144,13 +145,16 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     }
   }
 
-  private String getSauceJob(String userName, String accessKey) {
+  private String getSauceJob() {
     try {
-      String apiUrl = String.format("https://%s:%s@api.us-west-1.saucelabs.com", userName, accessKey);
+      String apiUrl = String.format(
+        "https://%s:%s@api.us-west-1.saucelabs.com",
+        usernameAndPassword.username(),
+        usernameAndPassword.password());
       HttpClient client = HttpClient.Factory.createDefault().createClient(new URL(apiUrl));
       HttpRequest httpRequest = new HttpRequest(
         HttpMethod.GET,
-        String.format("/rest/v1/%s/jobs?limit=10", userName));
+        String.format("/rest/v1/%s/jobs?limit=10", usernameAndPassword.username()));
       HttpResponse httpResponse = client.execute(httpRequest);
       Json json = new Json();
       ArrayList<Map<String, Object>> jobs = json.toType(Contents.string(httpResponse), Json.LIST_OF_MAPS_TYPE);
@@ -180,8 +184,8 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private Map<String, String> getAssetUploaderContainerEnvVars(String sauceJobId) {
     Map<String, String> envVars = new HashMap<>();
     envVars.put("SAUCE_JOB_ID", sauceJobId);
-    envVars.put("SAUCE_USERNAME", userName);
-    envVars.put("SAUCE_ACCESS_KEY", accessKey);
+    envVars.put("SAUCE_USERNAME", usernameAndPassword.username());
+    envVars.put("SAUCE_ACCESS_KEY", usernameAndPassword.password());
     return envVars;
   }
 }

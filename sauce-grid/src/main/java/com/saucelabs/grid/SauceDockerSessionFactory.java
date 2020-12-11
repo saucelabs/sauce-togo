@@ -11,8 +11,10 @@ import static org.openqa.selenium.remote.tracing.Tags.EXCEPTION;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.ImmutableCapabilities;
+import org.openqa.selenium.PersistentCapabilities;
 import org.openqa.selenium.SessionNotCreatedException;
 import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.UsernameAndPassword;
 import org.openqa.selenium.docker.Container;
 import org.openqa.selenium.docker.ContainerInfo;
 import org.openqa.selenium.docker.Docker;
@@ -60,6 +62,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,7 +110,20 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   @Override
   public Optional<ActiveSession> apply(CreateSessionRequest sessionRequest) {
-    LOG.info("Starting session for " + sessionRequest.getCapabilities());
+    Optional<Object> accessKey =
+      ofNullable(getCapability(sessionRequest.getCapabilities(), "accessKey"));
+    Optional<Object> userName =
+      ofNullable(getCapability(sessionRequest.getCapabilities(), "username"));
+    if (!accessKey.isPresent() && !userName.isPresent()) {
+      LOG.log(Level.WARNING, "Unable to create session. No Sauce Labs accessKey and "
+                             + "username were found in the 'sauce:options' block. ");
+      return Optional.empty();
+    }
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    UsernameAndPassword usernameAndPassword =
+      new UsernameAndPassword(userName.get().toString(), accessKey.get().toString());
+    Capabilities sessionReqCaps = removeSauceKey(sessionRequest.getCapabilities());
+    LOG.info("Starting session for " + sessionReqCaps);
     int port = PortProber.findFreePort();
     URL remoteAddress = getUrl(port);
     HttpClient client = clientFactory.createClient(remoteAddress);
@@ -117,7 +133,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
       attributeMap.put(AttributeKey.LOGGER_CLASS.getKey(),
                        EventAttribute.setValue(this.getClass().getName()));
       LOG.info("Creating container, mapping container port 4444 to " + port);
-      Container container = createBrowserContainer(port, sessionRequest.getCapabilities());
+      Container container = createBrowserContainer(port, sessionReqCaps);
       container.start();
       ContainerInfo containerInfo = container.inspect();
 
@@ -150,7 +166,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
       Command command = new Command(
         null,
-        DriverCommand.NEW_SESSION(sessionRequest.getCapabilities()));
+        DriverCommand.NEW_SESSION(sessionReqCaps));
       ProtocolHandshake.Result result;
       Response response;
       Instant startTime = Instant.now();
@@ -178,7 +194,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
       SessionId id = new SessionId(response.getSessionId());
       Capabilities capabilities = new ImmutableCapabilities((Map<?, ?>) response.getValue());
-      Capabilities mergedCapabilities = capabilities.merge(sessionRequest.getCapabilities());
+      Capabilities mergedCapabilities = capabilities.merge(sessionReqCaps);
 
       Container videoContainer = null;
       Optional<DockerAssetsPath> path = ofNullable(this.assetsPath);
@@ -205,7 +221,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
         .setStartTime(startTime.getEpochSecond())
         .setVideoStartTime(videoStartTime.getEpochSecond())
         .setEndTime(Instant.now().getEpochSecond())
-        .setRequest(sessionRequest.getCapabilities())
+        .setRequest(sessionReqCaps)
         .setResult(mergedCapabilities)
         .setPath("/session")
         .setHttpStatus(response.getStatus())
@@ -232,9 +248,23 @@ public class SauceDockerSessionFactory implements SessionFactory {
         result.getDialect(),
         startTime,
         assetsPath,
+        usernameAndPassword,
         commandInfo,
         docker));
     }
+  }
+
+  private Capabilities removeSauceKey(Capabilities capabilities) {
+    Capabilities filteredCaps = ImmutableCapabilities.copyOf(capabilities);
+    Object rawSauceOptions = filteredCaps.getCapability("sauce:options");
+    if (rawSauceOptions instanceof Map) {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> original = (Map<String, Object>) rawSauceOptions;
+      Map<String, Object> updated = new TreeMap<>(original);
+      updated.remove("accessKey");
+      return new PersistentCapabilities(filteredCaps).setCapability("sauce:options", updated);
+    }
+    return capabilities;
   }
 
   private Container createBrowserContainer(int port, Capabilities sessionCapabilities) {

@@ -319,6 +319,11 @@ public class SauceNode extends Node {
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
     } else {
+      // Only taking screenshots after a url has been loaded
+      if (!session.canTakeScreenshot() && req.getMethod() == POST
+          && req.getUri().endsWith("/url")) {
+        session.enableScreenshots();
+      }
       int screenshotId = takeScreenshot(session, req, slot);
       builder.setScreenshotId(screenshotId);
     }
@@ -341,7 +346,8 @@ public class SauceNode extends Node {
 
   private int takeScreenshot(SauceDockerSession session, HttpRequest req, SessionSlot slot) {
     Optional<DockerAssetsPath> path = ofNullable(session.getAssetsPath());
-    if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && path.isPresent()) {
+    if (session.canTakeScreenshot() && shouldTakeScreenshot(req.getMethod(), req.getUri())
+        && path.isPresent()) {
       HttpRequest screenshotRequest =
         new HttpRequest(GET, String.format("/session/%s/screenshot", session.getId()));
       HttpResponse screenshotResponse = slot.execute(screenshotRequest);

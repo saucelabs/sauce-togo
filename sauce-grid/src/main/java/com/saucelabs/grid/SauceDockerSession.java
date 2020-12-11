@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,6 +47,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private final Container container;
   private final Container videoContainer;
   private final AtomicInteger screenshotCount;
+  private final AtomicBoolean screenshotsEnabled;
   private final DockerAssetsPath assetsPath;
   private final List<SauceCommandInfo> webDriverCommands;
   private final UsernameAndPassword usernameAndPassword;
@@ -71,6 +73,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.videoContainer = videoContainer;
     this.assetsPath = Require.nonNull("Assets path", assetsPath);
     this.screenshotCount = new AtomicInteger(0);
+    this.screenshotsEnabled = new AtomicBoolean(false);
     this.usernameAndPassword = Require.nonNull("Sauce user & key", usernameAndPassword);
     this.webDriverCommands = new ArrayList<>();
     this.webDriverCommands.add(firstCommand);
@@ -79,6 +82,14 @@ public class SauceDockerSession extends ProtocolConvertingSession {
 
   public int increaseScreenshotCount() {
     return screenshotCount.getAndIncrement();
+  }
+
+  public boolean canTakeScreenshot() {
+    return screenshotsEnabled.get();
+  }
+
+  public void enableScreenshots() {
+    screenshotsEnabled.set(true);
   }
 
   public void addSauceCommandInfo(SauceCommandInfo commandInfo) {

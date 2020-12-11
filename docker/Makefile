@@ -1,5 +1,6 @@
 TAG := $(or $(TAG),$(TAG),4.0.0-beta-1-prerelease-20201208)
 VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20201208)
+ASSETS_UPLOADER_TAG := $(or $(ASSETS_UPLOADER_TAG),$(ASSETS_UPLOADER_TAG),20201208)
 
 all: video \
 	video_latest \
@@ -12,7 +13,8 @@ all: video \
 	sessions \
 	router \
 	distributor \
-	hub
+	hub \
+	assets_uploader
 
 video:
 	docker pull selenium/video:$(VIDEO_TAG) && docker tag selenium/video:$(VIDEO_TAG) saucelabs/video:$(VIDEO_TAG)
@@ -49,3 +51,6 @@ distributor:
 
 hub:
 	docker pull selenium/hub:$(TAG) && docker tag selenium/hub:$(TAG) saucelabs/hub:$(TAG)
+
+assets_uploader:
+	docker build --no-cache  -t saucelabs/assets-uploader:$(ASSETS_UPLOADER_TAG) -f dockerfile_assets_uploader .

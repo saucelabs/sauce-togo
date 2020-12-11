@@ -232,7 +232,8 @@ public class SauceDockerSessionFactory implements SessionFactory {
         result.getDialect(),
         startTime,
         assetsPath,
-        commandInfo));
+        commandInfo,
+        docker));
     }
   }
 

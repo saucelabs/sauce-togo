@@ -48,7 +48,7 @@ mvn clean package
 exit
 ```
 
-4. Use the generated jar in the Docker images
+4. Use the generated jar from Sauce-Grid in the Docker images
 
 ```shell script
 # Move the jar to the docker directory
@@ -61,6 +61,13 @@ make standalone_docker
 make video_latest video
 ```
 
-5. Run it in standalone mode
+5. Use the generated jar from Sauce-Assets-Uploader in the Docker images
 
-- Put uploader in a docker image
+```shell script
+# Move the jar to the docker directory (run command on the root directory)
+mv sauce-assets-uploader/target/sauce-assets-uploader-1.0-SNAPSHOT.jar docker/sauce-assets-uploader-1.0-SNAPSHOT.jar 
+# Go to the docker directory
+cd docker
+# Build the Sauce-Assets-Uploader Docker image
+make assets_uploader
+```

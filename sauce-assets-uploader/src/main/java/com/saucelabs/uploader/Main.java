@@ -25,8 +25,6 @@ public class Main {
 
   private static final Logger LOG = Logger.getLogger(Main.class.getName());
 
-  private static final String ASSETS_PATH =
-    System.getenv().getOrDefault("ASSETS_PATH", "/opt/selenium/assets");
   private static final String SAUCE_API_HOST =
     System.getenv().getOrDefault("SAUCE_API_HOST", "api.us-west-1.saucelabs.com");
   private static final String SAUCE_JOB_ID = System.getenv("SAUCE_JOB_ID");
@@ -37,14 +35,13 @@ public class Main {
         "SAUCE_API_URL",
         String.format("https://%s/v1/testrunner/jobs/%s/assets", SAUCE_API_HOST, SAUCE_JOB_ID));
 
-  private static final String LOCAL_SESSION_ID = System.getenv("LOCAL_SESSION_ID");
   private static final String SAUCE_USER_NAME = System.getenv("SAUCE_USERNAME");
   private static final String SAUCE_ACCESS_KEY = System.getenv("SAUCE_ACCESS_KEY");
+  private static final String SESSION_ASSETS_PATH = "/opt/selenium/assets";
 
   public static void main(String[] args) {
-    String sessionAssetsPath = ASSETS_PATH + File.separator + LOCAL_SESSION_ID;
     try {
-      Files.list(Paths.get(sessionAssetsPath))
+      Files.list(Paths.get(SESSION_ASSETS_PATH))
         .filter(path -> path.toFile().isFile())
         .forEach(path -> uploadFile(path.toFile(), getFileContentType(path.toFile().getName())));
     } catch (IOException e) {

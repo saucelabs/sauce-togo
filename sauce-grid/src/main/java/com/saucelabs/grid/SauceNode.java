@@ -74,7 +74,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -320,36 +319,8 @@ public class SauceNode extends Node {
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
     } else {
-      Optional<DockerAssetsPath> path = ofNullable(session.getAssetsPath());
-      if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && path.isPresent()) {
-        HttpRequest screenshotRequest = new HttpRequest(GET, String.format("/session/%s/screenshot", id));
-        HttpResponse screenshotResponse = slot.execute(screenshotRequest);
-        int screenshotId = session.increaseScreenshotCount();
-        builder.setScreenshotId(screenshotId);
-        String containerPath = path.get().getContainerPath(id);
-        String filePathPng = String.format(
-          "%s/%s%s.png",
-          containerPath,
-          formatScreenshotId(screenshotId),
-          "screenshot");
-        String screenshotContent = string(screenshotResponse).trim();
-        Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
-        String pngContent;
-        if (parsed.containsKey("value")) {
-          pngContent = (String) parsed.get("value");
-        } else {
-          pngContent = new Json().toType(screenshotContent, OBJECT_TYPE);
-        }
-        try {
-          Files.createDirectories(Paths.get(containerPath));
-          Files.copy(
-            FILE.convertFromBase64Png(pngContent).toPath(),
-            Paths.get(filePathPng),
-            StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-          LOG.log(Level.WARNING, "Error saving screenshot", e);
-        }
-      }
+      int screenshotId = takeScreenshot(session, req, slot);
+      builder.setScreenshotId(screenshotId);
     }
     String responseContent = string(toReturn);
     Map<String, Object> responseParsed = new Json().toType(responseContent, MAP_TYPE);
@@ -366,6 +337,41 @@ public class SauceNode extends Node {
     }
     session.addSauceCommandInfo(builder.build());
     return toReturn;
+  }
+
+  private int takeScreenshot(SauceDockerSession session, HttpRequest req, SessionSlot slot) {
+    Optional<DockerAssetsPath> path = ofNullable(session.getAssetsPath());
+    if (shouldTakeScreenshot(req.getMethod(), req.getUri()) && path.isPresent()) {
+      HttpRequest screenshotRequest =
+        new HttpRequest(GET, String.format("/session/%s/screenshot", session.getId()));
+      HttpResponse screenshotResponse = slot.execute(screenshotRequest);
+      int screenshotId = session.increaseScreenshotCount();
+      String containerPath = path.get().getContainerPath(session.getId());
+      String filePathPng = String.format(
+        "%s/%s%s.png",
+        containerPath,
+        formatScreenshotId(screenshotId),
+        "screenshot");
+      String screenshotContent = string(screenshotResponse).trim();
+      Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
+      String pngContent;
+      if (parsed.containsKey("value")) {
+        pngContent = (String) parsed.get("value");
+      } else {
+        pngContent = new Json().toType(screenshotContent, OBJECT_TYPE);
+      }
+      try {
+        Files.createDirectories(Paths.get(containerPath));
+        Files.copy(
+          FILE.convertFromBase64Png(pngContent).toPath(),
+          Paths.get(filePathPng),
+          StandardCopyOption.REPLACE_EXISTING);
+      } catch (Exception e) {
+        LOG.log(Level.WARNING, "Error saving screenshot", e);
+      }
+      return screenshotId;
+    }
+    return -1;
   }
 
   private String formatScreenshotId(int count) {
@@ -616,31 +622,6 @@ public class SauceNode extends Node {
         registrationSecret);
     }
 
-    public SauceNode.Builder.Advanced advanced() {
-      return new Advanced();
-    }
-
-    public class Advanced {
-
-      public SauceNode.Builder.Advanced clock(Clock clock) {
-        ticker = new Ticker() {
-          @Override
-          public long read() {
-            return clock.instant().toEpochMilli() * Duration.ofMillis(1).toNanos();
-          }
-        };
-        return this;
-      }
-
-      public SauceNode.Builder.Advanced healthCheck(HealthCheck healthCheck) {
-        SauceNode.Builder.this.healthCheck = Require.nonNull("Health check", healthCheck);
-        return this;
-      }
-
-      public Node build() {
-        return SauceNode.Builder.this.build();
-      }
-    }
   }
 
 }

@@ -323,16 +323,16 @@ public class SauceNode extends Node {
       builder.setScreenshotId(screenshotId);
     }
     String responseContent = string(toReturn);
-    Map<String, Object> responseParsed = new Json().toType(responseContent, MAP_TYPE);
+    Map<String, Object> parsedResponse = new Json().toType(responseContent, MAP_TYPE);
     builder.setEndTime(Instant.now().getEpochSecond())
       .setRequest(string(req))
       .setResult(responseContent)
-      .setPath(req.getUri())
+      .setPath(req.getUri().replace(String.format("/session/%s", id), ""))
       .setHttpStatus(toReturn.getStatus())
       .setHttpMethod(req.getMethod().name())
       .setStatusCode(0);
-    if (responseParsed.containsKey("value") && responseParsed.get("value") != null
-        && responseParsed.get("value").toString().contains("error")) {
+    if (parsedResponse.containsKey("value") && parsedResponse.get("value") != null
+        && parsedResponse.get("value").toString().contains("error")) {
       builder.setStatusCode(1);
     }
     session.addSauceCommandInfo(builder.build());

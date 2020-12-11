@@ -108,7 +108,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
       String logJson = String.format("%s/log.json", sessionAssetsPath);
       try {
         Files.write(Paths.get(seleniumServerLog), logs);
-        Files.write(Paths.get(logJson), new Json().toJson(webDriverCommands).getBytes());
+        Files.write(Paths.get(logJson), getProcessedWebDriverCommands());
       } catch (Exception e) {
         LOG.log(Level.WARNING, "Error saving logs", e);
       }
@@ -120,6 +120,12 @@ public class SauceDockerSession extends ProtocolConvertingSession {
       Container assetUploaderContainer = createAssetUploaderContainer(sauceJobId);
       assetUploaderContainer.start();
     }
+  }
+
+  private byte[] getProcessedWebDriverCommands() {
+    String webDriverCommands = new Json().toJson(this.webDriverCommands);
+    webDriverCommands = webDriverCommands.replaceAll("\"null\"", "null");
+    return webDriverCommands.getBytes();
   }
 
   private void createSauceJob() {

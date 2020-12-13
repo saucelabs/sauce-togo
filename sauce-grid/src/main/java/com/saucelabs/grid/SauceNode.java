@@ -68,6 +68,7 @@ import org.openqa.selenium.remote.tracing.Tracer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -76,6 +77,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -327,11 +329,11 @@ public class SauceNode extends Node {
       int screenshotId = takeScreenshot(session, req, slot);
       builder.setScreenshotId(screenshotId);
     }
-    String responseContent = string(toReturn);
-    Map<String, Object> parsedResponse = new Json().toType(responseContent, MAP_TYPE);
+    Map<String, Object> parsedResponse =
+      JSON.toType(new InputStreamReader(toReturn.getContent().get()), MAP_TYPE);
     builder.setEndTime(Instant.now().getEpochSecond())
-      .setRequest(string(req))
-      .setResult(responseContent)
+      .setRequest(getRequestContents(req))
+      .setResult(parsedResponse)
       .setPath(req.getUri().replace(String.format("/session/%s", id), ""))
       .setHttpStatus(toReturn.getStatus())
       .setHttpMethod(req.getMethod().name())
@@ -342,6 +344,14 @@ public class SauceNode extends Node {
     }
     session.addSauceCommandInfo(builder.build());
     return toReturn;
+  }
+
+  private Object getRequestContents(HttpRequest httpRequest) {
+    String reqContents = string(httpRequest);
+    if (reqContents.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    return JSON.toType(reqContents, MAP_TYPE);
   }
 
   private int takeScreenshot(SauceDockerSession session, HttpRequest req, SessionSlot slot) {
@@ -359,12 +369,12 @@ public class SauceNode extends Node {
         formatScreenshotId(screenshotId),
         "screenshot");
       String screenshotContent = string(screenshotResponse).trim();
-      Map<String, Object> parsed = new Json().toType(screenshotContent, MAP_TYPE);
+      Map<String, Object> parsed = JSON.toType(screenshotContent, MAP_TYPE);
       String pngContent;
       if (parsed.containsKey("value")) {
         pngContent = (String) parsed.get("value");
       } else {
-        pngContent = new Json().toType(screenshotContent, OBJECT_TYPE);
+        pngContent = JSON.toType(screenshotContent, OBJECT_TYPE);
       }
       try {
         Files.createDirectories(Paths.get(containerPath));

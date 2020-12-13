@@ -14,7 +14,8 @@ all: video \
 	router \
 	distributor \
 	hub \
-	assets_uploader
+	assets_uploader \
+	assets_uploader_latest
 
 video:
 	docker pull selenium/video:$(VIDEO_TAG) && docker tag selenium/video:$(VIDEO_TAG) saucelabs/video:$(VIDEO_TAG)
@@ -54,3 +55,6 @@ hub:
 
 assets_uploader:
 	docker build --no-cache  -t saucelabs/assets-uploader:$(ASSETS_UPLOADER_TAG) -f dockerfile_assets_uploader .
+
+assets_uploader_latest:
+	docker build --no-cache  -t saucelabs/assets-uploader:latest -f dockerfile_assets_uploader .

@@ -76,6 +76,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
   private final Image browserImage;
   private final Capabilities stereotype;
   private final Image videoImage;
+  private final Image assetsUploaderImage;
   private final DockerAssetsPath assetsPath;
 
   public SauceDockerSessionFactory(
@@ -86,6 +87,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     Image browserImage,
     Capabilities stereotype,
     Image videoImage,
+    Image assetsUploaderImage,
     DockerAssetsPath assetsPath) {
     this.tracer = Require.nonNull("Tracer", tracer);
     this.clientFactory = Require.nonNull("HTTP client", clientFactory);
@@ -95,6 +97,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     this.stereotype = ImmutableCapabilities.copyOf(
       Require.nonNull("Stereotype", stereotype));
     this.videoImage = videoImage;
+    this.assetsUploaderImage = assetsUploaderImage;
     this.assetsPath = assetsPath;
   }
 
@@ -250,6 +253,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
         startTime,
         assetsPath,
         usernameAndPassword,
+        assetsUploaderImage,
         commandInfo,
         docker));
     }

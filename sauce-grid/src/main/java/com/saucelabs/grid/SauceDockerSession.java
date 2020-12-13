@@ -51,6 +51,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private final DockerAssetsPath assetsPath;
   private final List<SauceCommandInfo> webDriverCommands;
   private final UsernameAndPassword usernameAndPassword;
+  private final Image assetsUploaderImage;
 
   SauceDockerSession(
     Container container,
@@ -66,6 +67,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     Instant startTime,
     DockerAssetsPath assetsPath,
     UsernameAndPassword usernameAndPassword,
+    Image assetsUploaderImage,
     SauceCommandInfo firstCommand,
     Docker docker) {
     super(tracer, client, id, url, downstream, upstream, stereotype, capabilities, startTime);
@@ -77,6 +79,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.usernameAndPassword = Require.nonNull("Sauce user & key", usernameAndPassword);
     this.webDriverCommands = new ArrayList<>();
     this.webDriverCommands.add(firstCommand);
+    this.assetsUploaderImage = assetsUploaderImage;
     this.docker = Require.nonNull("Docker", docker);
   }
 
@@ -191,9 +194,8 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     Map<String, String> assetUploaderContainerEnvVars = getAssetUploaderContainerEnvVars(sauceJobId);
     Map<String, String> assetsPath =
       Collections.singletonMap(hostSessionAssetsPath, "/opt/selenium/assets");
-    Image image = docker.getImage("saucelabs/assets-uploader:20201208");
     return docker.create(
-      image(image)
+      image(assetsUploaderImage)
         .env(assetUploaderContainerEnvVars)
         .bind(assetsPath));
   }

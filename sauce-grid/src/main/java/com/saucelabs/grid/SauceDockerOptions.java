@@ -39,6 +39,7 @@ public class SauceDockerOptions {
   private static final String DOCKER_SECTION = "docker";
   private static final String CONTAINER_ASSETS_PATH = "/opt/selenium/assets";
   private static final String DEFAULT_VIDEO_IMAGE = "saucelabs/video:latest";
+  private static final String DEFAULT_ASSETS_UPLOADER_IMAGE = "saucelabs/assets-uploader:latest";
 
   private static final Logger LOG = Logger.getLogger(SauceDockerOptions.class.getName());
   private static final Json JSON = new Json();
@@ -123,6 +124,8 @@ public class SauceDockerOptions {
     loadImages(docker, kinds.keySet().toArray(new String[0]));
     Image videoImage = getVideoImage(docker);
     loadImages(docker, videoImage.getName());
+    Image assetsUploaderImage = getAssetsUploaderImage(docker);
+    loadImages(docker, assetsUploaderImage.getName());
 
     int maxContainerCount = Runtime.getRuntime().availableProcessors();
     ImmutableMultimap.Builder<Capabilities, SessionFactory> factories = ImmutableMultimap.builder();
@@ -139,6 +142,7 @@ public class SauceDockerOptions {
             image,
             caps,
             videoImage,
+            assetsUploaderImage,
             assetsPath));
       }
       LOG.info(String.format(
@@ -153,6 +157,14 @@ public class SauceDockerOptions {
   private Image getVideoImage(Docker docker) {
     String videoImage = config.get(DOCKER_SECTION, "video-image").orElse(DEFAULT_VIDEO_IMAGE);
     return docker.getImage(videoImage);
+  }
+
+  private Image getAssetsUploaderImage(Docker docker) {
+    String assetsUploadImage =
+      config
+        .get(DOCKER_SECTION, "assets-uploader-image")
+        .orElse(DEFAULT_ASSETS_UPLOADER_IMAGE);
+    return docker.getImage(assetsUploadImage);
   }
 
   private DockerAssetsPath getAssetsPath(Docker docker) {

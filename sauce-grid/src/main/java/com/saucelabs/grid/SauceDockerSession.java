@@ -52,6 +52,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private final List<SauceCommandInfo> webDriverCommands;
   private final UsernameAndPassword usernameAndPassword;
   private final Image assetsUploaderImage;
+  private final DataCenter dataCenter;
 
   SauceDockerSession(
     Container container,
@@ -67,6 +68,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     Instant startTime,
     DockerAssetsPath assetsPath,
     UsernameAndPassword usernameAndPassword,
+    DataCenter dataCenter,
     Image assetsUploaderImage,
     SauceCommandInfo firstCommand,
     Docker docker) {
@@ -80,6 +82,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.webDriverCommands = new ArrayList<>();
     this.webDriverCommands.add(firstCommand);
     this.assetsUploaderImage = assetsUploaderImage;
+    this.dataCenter = dataCenter;
     this.docker = Require.nonNull("Docker", docker);
   }
 
@@ -155,7 +158,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
         updated.put("diySessionId", getId());
         updated.put("accessKey", usernameAndPassword.password());
         toUse = new PersistentCapabilities(toUse).setCapability(sauceOptions, updated);
-        URL sauceUrl = new URL("https://ondemand.us-west-1.saucelabs.com:443/wd/hub");
+        URL sauceUrl = new URL(String.format("%s/wd/hub", dataCenter.onDemandUrl));
         new RemoteWebDriver(sauceUrl, toUse);
       }
     } catch (SessionNotCreatedException e) {
@@ -168,10 +171,11 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private String getSauceJob() {
     try {
       String apiUrl = String.format(
-        "https://%s:%s@api.us-west-1.saucelabs.com",
+        dataCenter.apiUrl,
         usernameAndPassword.username(),
         usernameAndPassword.password());
       HttpClient client = HttpClient.Factory.createDefault().createClient(new URL(apiUrl));
+      // TODO Might need to increase the JOB limit in case too many tests are run in parallel
       HttpRequest httpRequest = new HttpRequest(
         HttpMethod.GET,
         String.format("/rest/v1/%s/jobs?limit=10", usernameAndPassword.username()));
@@ -203,6 +207,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private Map<String, String> getAssetUploaderContainerEnvVars(String sauceJobId) {
     Map<String, String> envVars = new HashMap<>();
     envVars.put("SAUCE_JOB_ID", sauceJobId);
+    envVars.put("SAUCE_API_HOST", dataCenter.apiHost);
     envVars.put("SAUCE_USERNAME", usernameAndPassword.username());
     envVars.put("SAUCE_ACCESS_KEY", usernameAndPassword.password());
     return envVars;

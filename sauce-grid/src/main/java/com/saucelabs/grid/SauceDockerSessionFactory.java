@@ -125,8 +125,17 @@ public class SauceDockerSessionFactory implements SessionFactory {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     UsernameAndPassword usernameAndPassword =
       new UsernameAndPassword(userName.get().toString(), accessKey.get().toString());
+
     Capabilities sessionReqCaps = removeSauceKey(sessionRequest.getCapabilities());
     LOG.info("Starting session for " + sessionReqCaps);
+
+    Optional<Object> dc =
+      ofNullable(getCapability(sessionRequest.getCapabilities(), "dataCenter"));
+    DataCenter dataCenter = DataCenter.US_WEST;
+    if (dc.isPresent()) {
+      dataCenter = DataCenter.fromString(String.valueOf(dc.get()));
+    }
+
     int port = PortProber.findFreePort();
     URL remoteAddress = getUrl(port);
     HttpClient client = clientFactory.createClient(remoteAddress);
@@ -253,6 +262,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
         startTime,
         assetsPath,
         usernameAndPassword,
+        dataCenter,
         assetsUploaderImage,
         commandInfo,
         docker));

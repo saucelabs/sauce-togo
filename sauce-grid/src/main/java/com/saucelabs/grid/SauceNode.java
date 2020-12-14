@@ -320,6 +320,7 @@ public class SauceNode extends Node {
 
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
+      builder.setScreenshotId(-1);
     } else {
       // Only taking screenshots after a url has been loaded
       if (!session.canTakeScreenshot() && req.getMethod() == POST

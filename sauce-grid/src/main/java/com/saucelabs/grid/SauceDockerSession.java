@@ -130,17 +130,15 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   }
 
   private void saveLogs() {
-    List<String> logs = container.getLogs().getLogs();
-    if (!logs.isEmpty()) {
-      String sessionAssetsPath = assetsPath.getContainerPath(getId());
-      String seleniumServerLog = String.format("%s/selenium-server.log", sessionAssetsPath);
-      String logJson = String.format("%s/log.json", sessionAssetsPath);
-      try {
-        Files.write(Paths.get(seleniumServerLog), logs);
-        Files.write(Paths.get(logJson), getProcessedWebDriverCommands());
-      } catch (Exception e) {
-        LOG.log(Level.WARNING, "Error saving logs", e);
-      }
+    String sessionAssetsPath = assetsPath.getContainerPath(getId());
+    String seleniumServerLog = String.format("%s/selenium-server.log", sessionAssetsPath);
+    String logJson = String.format("%s/log.json", sessionAssetsPath);
+    try {
+      List<String> logs = container.getLogs().getLogs();
+      Files.write(Paths.get(logJson), getProcessedWebDriverCommands());
+      Files.write(Paths.get(seleniumServerLog), logs);
+    } catch (Exception e) {
+      LOG.log(Level.WARNING, "Error saving logs", e);
     }
   }
 

@@ -1,0 +1,6 @@
+.idea
+target
+*.jar
+.m2
+.iml
+assets

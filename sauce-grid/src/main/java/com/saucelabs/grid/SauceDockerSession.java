@@ -53,6 +53,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   private final UsernameAndPassword usernameAndPassword;
   private final Image assetsUploaderImage;
   private final DataCenter dataCenter;
+  private final AtomicBoolean tearDownTriggered;
 
   SauceDockerSession(
     Container container,
@@ -84,6 +85,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     this.assetsUploaderImage = assetsUploaderImage;
     this.dataCenter = dataCenter;
     this.docker = Require.nonNull("Docker", docker);
+    this.tearDownTriggered = new AtomicBoolean(false);
   }
 
   public int increaseScreenshotCount() {
@@ -115,9 +117,19 @@ public class SauceDockerSession extends ProtocolConvertingSession {
 
   @Override
   public void stop() {
-    if (videoContainer != null) {
-      videoContainer.stop(Duration.ofSeconds(10));
-    }
+    new Thread(() -> {
+      if (!tearDownTriggered.getAndSet(true)) {
+        if (videoContainer != null) {
+          videoContainer.stop(Duration.ofSeconds(10));
+        }
+        saveLogs();
+        container.stop(Duration.ofMinutes(1));
+        integrateWithSauce();
+      }
+    }).start();
+  }
+
+  private void saveLogs() {
     List<String> logs = container.getLogs().getLogs();
     if (!logs.isEmpty()) {
       String sessionAssetsPath = assetsPath.getContainerPath(getId());
@@ -130,13 +142,13 @@ public class SauceDockerSession extends ProtocolConvertingSession {
         LOG.log(Level.WARNING, "Error saving logs", e);
       }
     }
-    container.stop(Duration.ofMinutes(1));
-    if (!logs.isEmpty()) {
-      createSauceJob();
-      String sauceJobId = getSauceJob();
-      Container assetUploaderContainer = createAssetUploaderContainer(sauceJobId);
-      assetUploaderContainer.start();
-    }
+  }
+
+  private void integrateWithSauce() {
+    createSauceJob();
+    String sauceJobId = getSauceJob();
+    Container assetUploaderContainer = createAssetUploaderContainer(sauceJobId);
+    assetUploaderContainer.start();
   }
 
   private byte[] getProcessedWebDriverCommands() {

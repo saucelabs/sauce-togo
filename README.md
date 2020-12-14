@@ -104,5 +104,5 @@ docker run --rm -ti --name sauce-togo -p 4444:4444 \
     saucelabs/standalone-docker:4.0.0-beta-1-prerelease-20201208
 ```
 
-8. Run your tests and point them to `http://localhost:4444`
+8. Run your tests and point them to `http://localhost:4444` or `http://localhost:4444/wd/hub`
 

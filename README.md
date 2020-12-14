@@ -65,7 +65,7 @@ make video_latest video
 
 ```shell script
 # Move the jar to the docker directory (run command on the root directory)
-mv sauce-assets-uploader/target/sauce-assets-uploader-1.0-SNAPSHOT.jar docker/sauce-assets-uploader-1.0-SNAPSHOT.jar 
+mv sauce-assets-uploader/target/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar 
 # Go to the docker directory
 cd docker
 # Build the Sauce-Assets-Uploader Docker image

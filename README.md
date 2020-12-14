@@ -48,26 +48,60 @@ mvn clean package
 exit
 ```
 
-4. Use the generated jar from Sauce-Grid in the Docker images
+4. Move the generated jars to the `docker` directory, we'll use them to build the Docker images
 
 ```shell script
 # Move the jar to the docker directory
 mv sauce-grid/target/sauce-grid-1.0-SNAPSHOT-jar-with-dependencies.jar docker/selenium-server.jar
-# Go to the docker directory
-cd docker
-# Build the standalone Docker image
-make standalone_docker
-# Build the video images
-make video_latest video
+# Move the jar to the docker directory
+mv sauce-assets-uploader/target/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar 
 ```
 
-5. Use the generated jar from Sauce-Assets-Uploader in the Docker images
+5. Build all the Docker images
 
 ```shell script
-# Move the jar to the docker directory (run command on the root directory)
-mv sauce-assets-uploader/target/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar 
 # Go to the docker directory
 cd docker
-# Build the Sauce-Assets-Uploader Docker image
-make assets_uploader
+# Build all the Docker images
+make all
 ```
+
+6. Add a configuration file. Place it on a directory that Docker can access.
+
+```toml
+[docker]
+# Configs have a mapping between the Docker image to use and the capabilities that need to be matched to
+# start a container with the given image.
+configs = [
+    "saucelabs/standalone-firefox:4.0.0-beta-1-prerelease-20201208", "{\"browserName\": \"firefox\"}",
+    "saucelabs/standalone-chrome:4.0.0-beta-1-prerelease-20201208", "{\"browserName\": \"chrome\"}"
+]
+
+# URL for connecting to the docker daemon
+# host.docker.internal works for macOS and Windows.
+# Linux could use --net=host in the `docker run` instruction or 172.17.0.1 in the URI below.
+# To have Docker listening through tcp on macOS, install socat and run the following command
+# socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
+host = "tcp://host.docker.internal:2375"
+# Docker imagee used for video recording
+video-image = "saucelabs/video:ffmpeg-4.3.1-20201208"
+# Docker imagee used to upload the generated test assets
+assets-uploader-image = "saucelabs/assets-uploader:20201208"
+
+[node]
+implementation = "com.saucelabs.grid.SauceNodeFactory"
+```
+
+7. Start Sauce-ToGo
+
+You'll need to mount two volumes. The first one is the absolute path where the config file from
+step 6 is, and the second one is an absolute path where you'd like the test assets to be stored. 
+
+```shell script
+docker run --rm -ti --name sauce-togo -p 4444:4444 \
+    -v /absolute/path/to/your/sauce/togo/config.toml:/opt/bin/config.toml \
+    -v /absolute/path/to/your/assets/directory:/opt/selenium/assets \
+    saucelabs/standalone-docker:4.0.0-beta-1-prerelease-20201208
+```
+
+

@@ -1,5 +1,8 @@
 package com.saucelabs.uploader;
 
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -17,6 +20,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.temporal.ChronoUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -50,28 +54,45 @@ public class Main {
   }
 
   public static void uploadFile(File fileToUpload, ContentType fileContentType) {
-    try (CloseableHttpClient client = HttpClients.createDefault()) {
-      LOG.info(String.format("Uploading %s to %s", fileToUpload.getAbsolutePath(), SAUCE_API_URL));
-      HttpPut httpPut = new HttpPut(SAUCE_API_URL);
-      HttpEntity httpEntity = MultipartEntityBuilder
-        .create()
-        .addBinaryBody("file[]", fileToUpload, fileContentType, fileToUpload.getName())
-        .build();
-      httpPut.setEntity(httpEntity);
-      UsernamePasswordCredentials credentials =
-        new UsernamePasswordCredentials(SAUCE_USER_NAME, SAUCE_ACCESS_KEY);
-      httpPut.setHeader(new BasicScheme().authenticate(credentials, httpPut, null));
-      try (CloseableHttpResponse response = client.execute(httpPut)) {
-        System.out.println(response.getStatusLine().getStatusCode());
-        String collect = new BufferedReader(
-          new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))
-          .lines()
-          .collect(Collectors.joining("\n"));
-        System.out.println(collect);
+    LOG.info(String.format("Uploading %s to %s", fileToUpload.getAbsolutePath(), SAUCE_API_URL));
+
+    RetryPolicy<Object> retryPolicy = new RetryPolicy<>()
+      .withMaxAttempts(5)
+      .withDelay(5, 20, ChronoUnit.SECONDS)
+      .onRetriesExceeded(
+        e -> LOG.warning(
+          String.format(
+            "Failed to upload %s to %s. Max retries exceeded.",
+            fileToUpload.getAbsolutePath(),
+            SAUCE_API_URL)
+        ))
+      .abortWhen(true);
+
+    Failsafe.with(retryPolicy).run(
+      () -> {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+          HttpPut httpPut = new HttpPut(SAUCE_API_URL);
+          HttpEntity httpEntity = MultipartEntityBuilder
+            .create()
+            .addBinaryBody("file[]", fileToUpload, fileContentType, fileToUpload.getName())
+            .build();
+          httpPut.setEntity(httpEntity);
+          UsernamePasswordCredentials credentials =
+            new UsernamePasswordCredentials(SAUCE_USER_NAME, SAUCE_ACCESS_KEY);
+          httpPut.setHeader(new BasicScheme().authenticate(credentials, httpPut, null));
+          try (CloseableHttpResponse response = client.execute(httpPut)) {
+            System.out.println(response.getStatusLine().getStatusCode());
+            String collect = new BufferedReader(
+              new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))
+              .lines()
+              .collect(Collectors.joining("\n"));
+            System.out.println(collect);
+          }
+        } catch (Exception e) {
+          LOG.log(Level.WARNING, "Issue while uploading " + fileToUpload.getAbsolutePath(), e);
+        }
       }
-    } catch (Exception e) {
-      LOG.log(Level.WARNING, "Issue while uploading " + fileToUpload.getAbsolutePath(), e);
-    }
+    );
   }
 
   private static ContentType getFileContentType(String fileName) {

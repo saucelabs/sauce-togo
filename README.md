@@ -106,3 +106,23 @@ docker run --rm -ti --name sauce-togo -p 4444:4444 \
 
 8. Run your tests and point them to `http://localhost:4444` or `http://localhost:4444/wd/hub`
 
+Your test capabilities need to include the `sauce:options` section, here is an example: 
+
+```json
+{
+  "browserName": "firefox",
+  "platformName": "linux",
+  "sauce:options": {
+    "timeZone": "US/Pacific",
+    "screenResolution": "1920x1080",
+    "dataCenter": "EU",
+    "name": "Your test name",
+    "username": "Your Sauce user name",
+    "accessKey": "Your Sauce access key"
+  }
+}
+```
+
+The values for `username` and `accessKey` are mandatory.
+
+You can see some sample tests [here](sauce-grid/src/test/java/com/saucelabs/grid/e2e/SampleTests.java).

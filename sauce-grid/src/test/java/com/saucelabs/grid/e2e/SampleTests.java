@@ -28,8 +28,8 @@ public class SampleTests {
 
   static Stream<Arguments> browsersAndPlatforms() {
     return Stream.of(
-      arguments("chrome", "Windows"),
-      arguments("firefox", "Windows")
+      arguments("chrome", "linux"),
+      arguments("firefox", "linux")
     );
   }
   public RemoteWebDriver createDriver(String testName, String browserName, String platformName)

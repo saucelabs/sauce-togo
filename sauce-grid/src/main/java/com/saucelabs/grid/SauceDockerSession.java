@@ -134,7 +134,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     String seleniumServerLog = String.format("%s/selenium-server.log", sessionAssetsPath);
     String logJson = String.format("%s/log.json", sessionAssetsPath);
     try {
-      List<String> logs = container.getLogs().getLogs();
+      List<String> logs = container.getLogs().getLogLines();
       Files.write(Paths.get(logJson), getProcessedWebDriverCommands());
       Files.write(Paths.get(seleniumServerLog), logs);
     } catch (Exception e) {

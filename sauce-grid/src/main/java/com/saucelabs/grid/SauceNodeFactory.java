@@ -32,7 +32,10 @@ public class SauceNodeFactory {
       eventOptions.getEventBus(),
       serverOptions.getExternalUri(),
       nodeOptions.getPublicGridUri().orElseGet(serverOptions::getExternalUri),
-      secretOptions.getRegistrationSecret());
+      secretOptions.getRegistrationSecret())
+      .maximumConcurrentSessions(nodeOptions.getMaxSessions())
+      .sessionTimeout(nodeOptions.getSessionTimeout())
+      .heartbeatPeriod(nodeOptions.getHeartbeatPeriod());
 
     sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory)
       .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));

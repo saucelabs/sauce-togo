@@ -10,13 +10,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.MutableCapabilities;
+import org.openqa.selenium.Platform;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -28,19 +29,28 @@ public class SampleTests {
 
   static Stream<Arguments> browsersAndPlatforms() {
     return Stream.of(
-      arguments("chrome", "linux"),
-      arguments("firefox", "linux")
+      arguments(BrowserType.CHROME, Platform.LINUX),
+      arguments(BrowserType.EDGE, Platform.LINUX),
+      arguments(BrowserType.FIREFOX, Platform.LINUX)
     );
   }
-  public RemoteWebDriver createDriver(String testName, String browserName, String platformName)
-    throws MalformedURLException {
+  public RemoteWebDriver createDriver(String testName, String browserName, Platform platformName)
+    throws Exception {
     LOG.info("Running " + testName);
     URL gridUrl = new URL("http://localhost:4444");
     MutableCapabilities capabilities;
-    if (BrowserType.CHROME.equalsIgnoreCase(browserName)) {
-      capabilities = new ChromeOptions();
-    } else {
-      capabilities = new FirefoxOptions();
+    switch (browserName) {
+      case BrowserType.CHROME:
+        capabilities = new ChromeOptions();
+        break;
+      case BrowserType.FIREFOX:
+        capabilities = new FirefoxOptions();
+        break;
+      case BrowserType.EDGE:
+        capabilities = new EdgeOptions();
+        break;
+      default:
+        throw new Exception("Browser not configured! " + browserName);
     }
     capabilities.setCapability(SAUCE_OPTIONS_CAPS, getSauceOptions(testName));
     capabilities.setCapability(CapabilityType.PLATFORM_NAME, platformName);
@@ -51,8 +61,8 @@ public class SampleTests {
 
   @ParameterizedTest(name = "{index} ==> Browser: {0}, Platform: {1}")
   @MethodSource("browsersAndPlatforms")
-  public void addOneItemToCart(String browserName, String platformName, TestInfo testInfo)
-    throws MalformedURLException {
+  public void addOneItemToCart(String browserName, Platform platformName, TestInfo testInfo)
+    throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
       driver.get("https://www.saucedemo.com/inventory.html");
@@ -68,8 +78,8 @@ public class SampleTests {
 
   @ParameterizedTest(name = "{index} ==> Browser: {0}, Platform: {1}")
   @MethodSource("browsersAndPlatforms")
-  public void addTwoItemsToCart(String browserName, String platformName, TestInfo testInfo)
-    throws MalformedURLException {
+  public void addTwoItemsToCart(String browserName, Platform platformName, TestInfo testInfo)
+    throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
       driver.get("https://www.saucedemo.com/inventory.html");
@@ -86,8 +96,8 @@ public class SampleTests {
 
   @ParameterizedTest(name = "{index} ==> Browser: {0}, Platform: {1}")
   @MethodSource("browsersAndPlatforms")
-  public void validCredentials(String browserName, String platformName, TestInfo testInfo)
-    throws MalformedURLException {
+  public void validCredentials(String browserName, Platform platformName, TestInfo testInfo)
+    throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
       driver.get("https://www.saucedemo.com");
@@ -103,8 +113,8 @@ public class SampleTests {
 
   @ParameterizedTest(name = "{index} ==> Browser: {0}, Platform: {1}")
   @MethodSource("browsersAndPlatforms")
-  public void invalidCredentials(String browserName, String platformName, TestInfo testInfo)
-    throws MalformedURLException {
+  public void invalidCredentials(String browserName, Platform platformName, TestInfo testInfo)
+    throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
       driver.get("https://www.saucedemo.com");
@@ -120,8 +130,8 @@ public class SampleTests {
 
   @ParameterizedTest(name = "{index} ==> Browser: {0}, Platform: {1}")
   @MethodSource("browsersAndPlatforms")
-  public void longScript(String browserName, String platformName, TestInfo testInfo)
-    throws MalformedURLException {
+  public void longScript(String browserName, Platform platformName, TestInfo testInfo)
+    throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
       driver.get("https://time.is/");

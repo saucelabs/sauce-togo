@@ -6,7 +6,7 @@ Run these commands on the root directory of the project.
 1. Download the prerelease build of the Selenium Server
 ```shell script
 mkdir -p server-jar
-wget https://github.com/SeleniumHQ/docker-selenium/raw/beta-jars/selenium-server-4.0.0-prerelease-beta-1-1f4909f59c.jar -O ${PWD}/server-jar/selenium-server.jar
+wget https://github.com/SeleniumHQ/docker-selenium/raw/beta-jars/selenium-server-4.0.0-prerelease-beta-3-fcfbc6ba25.jar -O ${PWD}/server-jar/selenium-server.jar
 ``` 
 
 2. We will use a Docker container to build Sauce-ToGo. First, install the dependencies locally. 
@@ -25,7 +25,7 @@ mvn install:install-file \
 -Dfile=selenium-server.jar \
 -DgroupId=org.seleniumhq.selenium \
 -DartifactId=selenium-grid \
--Dversion=4.0.0-beta-1 \
+-Dversion=4.0.0-beta-3 \
 -Dpackaging=jar \
 -DgeneratePom=true
 # Exit the container
@@ -52,9 +52,9 @@ exit
 
 ```shell script
 # Move the jar to the docker directory
-mv sauce-grid/target/sauce-grid-1.0-SNAPSHOT-jar-with-dependencies.jar docker/selenium-server.jar
+mv sauce-grid/target/sauce-grid-0.1-SNAPSHOT-jar-with-dependencies.jar docker/selenium-server.jar
 # Move the jar to the docker directory
-mv sauce-assets-uploader/target/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader-1.0-SNAPSHOT-jar-with-dependencies.jar 
+mv sauce-assets-uploader/target/sauce-assets-uploader-0.1-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader-0.1-SNAPSHOT-jar-with-dependencies.jar 
 ```
 
 5. Build all the Docker images
@@ -73,8 +73,9 @@ make all
 # Configs have a mapping between the Docker image to use and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/standalone-firefox:4.0.0-beta-1-prerelease-20201208", "{\"browserName\": \"firefox\"}",
-    "saucelabs/standalone-chrome:4.0.0-beta-1-prerelease-20201208", "{\"browserName\": \"chrome\"}"
+    "saucelabs/standalone-firefox:4.0.0-beta-3-prerelease-20210402", "{\"browserName\": \"firefox\", \"platformName\": \"linux\"}",
+    "saucelabs/standalone-edge:4.0.0-beta-3-prerelease-20210402", "{\"browserName\": \"firefox\", \"platformName\": \"linux\"}",
+    "saucelabs/standalone-chrome:4.0.0-beta-3-prerelease-20210402", "{\"browserName\": \"chrome\", \"platformName\": \"linux\"}"
 ]
 
 # URL for connecting to the docker daemon
@@ -82,11 +83,11 @@ configs = [
 # Linux could use --net=host in the `docker run` instruction or 172.17.0.1 in the URI below.
 # To have Docker listening through tcp on macOS, install socat and run the following command
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
-host = "tcp://host.docker.internal:2375"
+url = "tcp://host.docker.internal:2375"
 # Docker imagee used for video recording
-video-image = "saucelabs/video:ffmpeg-4.3.1-20201208"
+video-image = "saucelabs/video:ffmpeg-4.3.1-20210402"
 # Docker imagee used to upload the generated test assets
-assets-uploader-image = "saucelabs/assets-uploader:20201208"
+assets-uploader-image = "saucelabs/assets-uploader:20210402"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"

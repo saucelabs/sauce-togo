@@ -7,7 +7,7 @@
   <groupId>com.saucelabs</groupId>
   <artifactId>sauce-togo</artifactId>
   <packaging>pom</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.1-SNAPSHOT</version>
   <modules>
     <module>sauce-grid</module>
     <module>sauce-assets-uploader</module>

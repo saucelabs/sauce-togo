@@ -65,6 +65,7 @@ public class SampleTests {
     throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
+      loginToSauceDemo(driver, "standard_user", "secret_sauce");
       driver.get("https://www.saucedemo.com/inventory.html");
       driver.findElement(By.className("btn_primary")).click();
       assertEquals("1", driver.findElement(By.className("shopping_cart_badge")).getText());
@@ -82,6 +83,7 @@ public class SampleTests {
     throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
+      loginToSauceDemo(driver, "standard_user", "secret_sauce");
       driver.get("https://www.saucedemo.com/inventory.html");
       driver.findElement(By.className("btn_primary")).click();
       driver.findElement(By.className("btn_primary")).click();
@@ -100,11 +102,7 @@ public class SampleTests {
     throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
-      driver.get("https://www.saucedemo.com");
-      driver.findElement(By.id("user-name")).sendKeys("standard_user");
-      driver.findElement(By.id("password")).sendKeys("secret_sauce");
-      driver.findElement(By.className("btn_action")).click();
-
+      loginToSauceDemo(driver, "standard_user", "secret_sauce");
       assertTrue(driver.getCurrentUrl().contains("inventory"));
     } finally {
       driver.quit();
@@ -117,15 +115,18 @@ public class SampleTests {
     throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
-      driver.get("https://www.saucedemo.com");
-      driver.findElement(By.id("user-name")).sendKeys("bad");
-      driver.findElement(By.id("password")).sendKeys("bad");
-      driver.findElement(By.className("btn_action")).click();
-
+      loginToSauceDemo(driver, "bad", "bad");
       assertTrue(driver.findElements(By.className("error-button")).size() > 0);
     } finally {
       driver.quit();
     }
+  }
+
+  private void loginToSauceDemo(RemoteWebDriver driver, String bad, String bad2) {
+    driver.get("https://www.saucedemo.com");
+    driver.findElement(By.id("user-name")).sendKeys(bad);
+    driver.findElement(By.id("password")).sendKeys(bad2);
+    driver.findElement(By.className("btn_action")).click();
   }
 
   @ParameterizedTest(name = "{index} ==> Browser: {0}, Platform: {1}")
@@ -143,6 +144,8 @@ public class SampleTests {
       driver.quit();
     }
   }
+
+
 
   private String getTestName(TestInfo testInfo) {
     if (testInfo.getTestMethod().isPresent()) {

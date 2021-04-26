@@ -1,6 +1,6 @@
-TAG := $(or $(TAG),$(TAG),4.0.0-beta-3-prerelease-20210402)
-VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20210402)
-ASSETS_UPLOADER_TAG := $(or $(ASSETS_UPLOADER_TAG),$(ASSETS_UPLOADER_TAG),20210402)
+TAG := $(or $(TAG),$(TAG),4.0.0-beta-3-prerelease-20210422)
+VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20210422)
+ASSETS_UPLOADER_TAG := $(or $(ASSETS_UPLOADER_TAG),$(ASSETS_UPLOADER_TAG),20210422)
 
 all: video \
 	video_latest \

@@ -1,9 +1,9 @@
 package com.saucelabs.grid;
 
+import static com.saucelabs.grid.Common.JSON;
 import static org.openqa.selenium.Platform.WINDOWS;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 
@@ -19,7 +19,6 @@ import org.openqa.selenium.grid.config.ConfigException;
 import org.openqa.selenium.grid.docker.DockerAssetsPath;
 import org.openqa.selenium.grid.node.SessionFactory;
 import org.openqa.selenium.internal.Require;
-import org.openqa.selenium.json.Json;
 import org.openqa.selenium.net.HostIdentifier;
 import org.openqa.selenium.remote.http.ClientConfig;
 import org.openqa.selenium.remote.http.HttpClient;
@@ -45,7 +44,6 @@ public class SauceDockerOptions {
   private static final String DEFAULT_DOCKER_NETWORK = "bridge";
 
   private static final Logger LOG = Logger.getLogger(SauceDockerOptions.class.getName());
-  private static final Json JSON = new Json();
   private final Config config;
 
   public SauceDockerOptions(Config config) {

@@ -1,6 +1,7 @@
 package com.saucelabs.grid;
 
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static com.saucelabs.grid.Common.JSON;
 import static java.util.Optional.ofNullable;
 import static org.openqa.selenium.OutputType.FILE;
 import static org.openqa.selenium.grid.data.Availability.DRAINING;
@@ -97,7 +98,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class SauceNode extends Node {
-  private static final Json JSON = new Json();
   private static final Logger LOG = Logger.getLogger(LocalNode.class.getName());
   private final EventBus bus;
   private final URI externalUri;

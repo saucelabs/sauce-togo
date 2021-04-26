@@ -1,11 +1,15 @@
 package com.saucelabs.grid;
 
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.saucelabs.grid.Common.JSON;
+import static com.saucelabs.grid.Common.getSauceCapability;
+import static java.time.Instant.ofEpochSecond;
 import static org.openqa.selenium.docker.ContainerConfig.image;
+import static org.openqa.selenium.json.Json.JSON_UTF_8;
+import static org.openqa.selenium.remote.http.Contents.asJson;
 
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.ImmutableCapabilities;
-import org.openqa.selenium.PersistentCapabilities;
-import org.openqa.selenium.SessionNotCreatedException;
+import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.UsernameAndPassword;
 import org.openqa.selenium.docker.Container;
 import org.openqa.selenium.docker.Docker;
@@ -13,9 +17,8 @@ import org.openqa.selenium.docker.Image;
 import org.openqa.selenium.grid.docker.DockerAssetsPath;
 import org.openqa.selenium.grid.node.ProtocolConvertingSession;
 import org.openqa.selenium.internal.Require;
-import org.openqa.selenium.json.Json;
+import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.Dialect;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.remote.SessionId;
 import org.openqa.selenium.remote.http.Contents;
 import org.openqa.selenium.remote.http.HttpClient;
@@ -34,8 +37,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -143,62 +144,54 @@ public class SauceDockerSession extends ProtocolConvertingSession {
   }
 
   private void integrateWithSauce() {
-    createSauceJob();
-    String sauceJobId = getSauceJob();
+    String sauceJobId = createSauceJob();
+    // TODO: What if the job id is null?
     Container assetUploaderContainer = createAssetUploaderContainer(sauceJobId);
     assetUploaderContainer.start();
   }
 
   private byte[] getProcessedWebDriverCommands() {
-    String webDriverCommands = new Json().toJson(this.webDriverCommands);
+    String webDriverCommands = JSON.toJson(this.webDriverCommands);
     webDriverCommands = webDriverCommands.replaceAll("\"null\"", "null");
     return webDriverCommands.getBytes();
   }
 
-  private void createSauceJob() {
-    String sauceOptions = "sauce:options";
-    Capabilities toUse = ImmutableCapabilities.copyOf(getCapabilities());
-    Object rawSauceOptions = getCapabilities().getCapability(sauceOptions);
-    try {
-      if (rawSauceOptions instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> original = (Map<String, Object>) rawSauceOptions;
-        Map<String, Object> updated = new TreeMap<>(original);
-        // Adding the local session id, so we can match it when retrieving the job from Sauce
-        updated.put("diySessionId", getId());
-        updated.put("accessKey", usernameAndPassword.password());
-        toUse = new PersistentCapabilities(toUse).setCapability(sauceOptions, updated);
-        URL sauceUrl = new URL(String.format("%s/wd/hub", dataCenter.onDemandUrl));
-        new RemoteWebDriver(sauceUrl, toUse);
-      }
-    } catch (SessionNotCreatedException e) {
-      LOG.log(Level.FINE, "Error creating session in Sauce Labs", e);
-    } catch (Exception e) {
-      LOG.log(Level.WARNING, "Error creating session in Sauce Labs", e);
-    }
-  }
+  private String createSauceJob() {
+    MutableCapabilities jobInfo = new MutableCapabilities();
+    jobInfo.setCapability(CapabilityType.BROWSER_NAME, getCapabilities().getBrowserName());
+    jobInfo.setCapability(CapabilityType.PLATFORM_NAME, getCapabilities().getPlatformName());
+    jobInfo.setCapability(CapabilityType.BROWSER_VERSION, getCapabilities().getBrowserVersion());
+    jobInfo.setCapability("framework", "webdriver");
+    getSauceCapability(getCapabilities(), "build")
+      .ifPresent(build -> jobInfo.setCapability("build", build.toString()));
+    getSauceCapability(getCapabilities(), "name")
+      .ifPresent(name -> jobInfo.setCapability("name", name.toString()));
+    getSauceCapability(getCapabilities(), "tags")
+      .ifPresent(tags -> jobInfo.setCapability("tags", tags));
+    // TODO: What time zone is being used?
+    SauceCommandInfo firstCommand = webDriverCommands.get(0);
+    String startTime = ofEpochSecond(firstCommand.getStartTime()).toString();
+    jobInfo.setCapability("startTime", startTime);
+    SauceCommandInfo lastCommand = webDriverCommands.get(webDriverCommands.size() - 1);
+    String endTime = ofEpochSecond(lastCommand.getStartTime()).toString();
+    jobInfo.setCapability("endTime", endTime);
+    // TODO: We cannot always know if the test passed or not
+    jobInfo.setCapability("passed", true);
 
-  private String getSauceJob() {
+    String apiUrl = String.format(
+      dataCenter.apiUrl,
+      usernameAndPassword.username(),
+      usernameAndPassword.password());
     try {
-      String apiUrl = String.format(
-        dataCenter.apiUrl,
-        usernameAndPassword.username(),
-        usernameAndPassword.password());
       HttpClient client = HttpClient.Factory.createDefault().createClient(new URL(apiUrl));
-      // TODO Might need to increase the JOB limit in case too many tests are run in parallel
-      HttpRequest httpRequest = new HttpRequest(
-        HttpMethod.GET,
-        String.format("/rest/v1/%s/jobs?limit=10", usernameAndPassword.username()));
-      HttpResponse httpResponse = client.execute(httpRequest);
-      Json json = new Json();
-      ArrayList<Map<String, Object>> jobs = json.toType(Contents.string(httpResponse), Json.LIST_OF_MAPS_TYPE);
-      Optional<Map<String, Object>> firstMatch = jobs
-        .stream()
-        .filter(job -> String.valueOf(job).contains(getId().toString()))
-        .findFirst();
-      return firstMatch.map(stringObjectMap -> stringObjectMap.get("id").toString()).orElse(null);
+      HttpRequest request = new HttpRequest(HttpMethod.POST, "/v1/testrunner/reports");
+      request.setContent(asJson(jobInfo));
+      request.setHeader(CONTENT_TYPE, JSON_UTF_8);
+      HttpResponse response = client.execute(request);
+      Map<String, String> jobId = JSON.toType(Contents.string(response), Map.class);
+      return jobId.get("ID");
     } catch (Exception e) {
-      LOG.log(Level.WARNING, "Error getting job id from Sauce Labs", e);
+      LOG.log(Level.WARNING, "Error creating job in Sauce Labs", e);
     }
     return null;
   }

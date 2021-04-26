@@ -1,5 +1,8 @@
 package com.saucelabs.grid;
 
+import static com.saucelabs.grid.Common.JSON;
+import static com.saucelabs.grid.Common.SAUCE_OPTIONS;
+import static com.saucelabs.grid.Common.getSauceCapability;
 import static java.util.Optional.ofNullable;
 import static org.openqa.selenium.docker.ContainerConfig.image;
 import static org.openqa.selenium.remote.Dialect.W3C;
@@ -29,7 +32,6 @@ import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.SessionFactory;
 import org.openqa.selenium.internal.Either;
 import org.openqa.selenium.internal.Require;
-import org.openqa.selenium.json.Json;
 import org.openqa.selenium.net.PortProber;
 import org.openqa.selenium.remote.Command;
 import org.openqa.selenium.remote.Dialect;
@@ -124,12 +126,12 @@ public class SauceDockerSessionFactory implements SessionFactory {
   @Override
   public Either<WebDriverException, ActiveSession> apply(CreateSessionRequest sessionRequest) {
     Optional<Object> accessKey =
-      ofNullable(getCapability(sessionRequest.getCapabilities(), "accessKey"));
+      getSauceCapability(sessionRequest.getCapabilities(), "accessKey");
     Optional<Object> userName =
-      ofNullable(getCapability(sessionRequest.getCapabilities(), "username"));
+      getSauceCapability(sessionRequest.getCapabilities(), "username");
     if (!accessKey.isPresent() && !userName.isPresent()) {
-      String message = "Unable to create session. No Sauce Labs accessKey and "
-                       + "username were found in the 'sauce:options' block.";
+      String message = String.format("Unable to create session. No Sauce Labs accessKey and "
+                       + "username were found in the '%s' block.", SAUCE_OPTIONS);
       LOG.log(Level.WARNING, message);
       return Either.left(new SessionNotCreatedException(message));
     }
@@ -141,7 +143,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     LOG.info("Starting session for " + sessionReqCaps);
 
     Optional<Object> dc =
-      ofNullable(getCapability(sessionRequest.getCapabilities(), "dataCenter"));
+      getSauceCapability(sessionRequest.getCapabilities(), "dataCenter");
     DataCenter dataCenter = DataCenter.US_WEST;
     if (dc.isPresent()) {
       dataCenter = DataCenter.fromString(String.valueOf(dc.get()));
@@ -289,13 +291,13 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   private Capabilities removeSauceKey(Capabilities capabilities) {
     Capabilities filteredCaps = ImmutableCapabilities.copyOf(capabilities);
-    Object rawSauceOptions = filteredCaps.getCapability("sauce:options");
+    Object rawSauceOptions = filteredCaps.getCapability(SAUCE_OPTIONS);
     if (rawSauceOptions instanceof Map) {
       @SuppressWarnings("unchecked")
       Map<String, Object> original = (Map<String, Object>) rawSauceOptions;
       Map<String, Object> updated = new TreeMap<>(original);
       updated.remove("accessKey");
-      return new PersistentCapabilities(filteredCaps).setCapability("sauce:options", updated);
+      return new PersistentCapabilities(filteredCaps).setCapability(SAUCE_OPTIONS, updated);
     }
     return capabilities;
   }
@@ -357,7 +359,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   private TimeZone getTimeZone(Capabilities sessionRequestCapabilities) {
     Optional<Object> timeZone =
-      ofNullable(getCapability(sessionRequestCapabilities, "timeZone"));
+      getSauceCapability(sessionRequestCapabilities, "timeZone");
     if (timeZone.isPresent()) {
       String tz =  timeZone.get().toString();
       if (Arrays.asList(TimeZone.getAvailableIDs()).contains(tz)) {
@@ -369,7 +371,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   private Dimension getScreenResolution(Capabilities sessionRequestCapabilities) {
     Optional<Object> screenResolution =
-      ofNullable(getCapability(sessionRequestCapabilities, "screenResolution"));
+      getSauceCapability(sessionRequestCapabilities, "screenResolution");
     if (!screenResolution.isPresent()) {
       return null;
     }
@@ -394,26 +396,15 @@ public class SauceDockerSessionFactory implements SessionFactory {
   private boolean recordVideoForSession(Capabilities sessionRequestCapabilities) {
     boolean recordVideo = true;
     Optional<Object> recordVideoCapability =
-      ofNullable(getCapability(sessionRequestCapabilities, "recordVideo"));
+      getSauceCapability(sessionRequestCapabilities, "recordVideo");
     if (recordVideoCapability.isPresent()) {
       recordVideo = Boolean.parseBoolean(recordVideoCapability.get().toString());
     }
     return recordVideo;
   }
 
-  private Object getCapability(Capabilities sessionRequestCapabilities, String capabilityName) {
-    Object rawSeleniumOptions =
-      sessionRequestCapabilities.getCapability("sauce:options");
-    if (rawSeleniumOptions instanceof Map) {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> seleniumOptions = (Map<String, Object>) rawSeleniumOptions;
-      return seleniumOptions.get(capabilityName);
-    }
-    return null;
-  }
-
   private void saveSessionCapabilities(Capabilities sessionRequestCapabilities, String path) {
-    String capsToJson = new Json().toJson(sessionRequestCapabilities);
+    String capsToJson = JSON.toJson(sessionRequestCapabilities);
     try {
       Files.createDirectories(Paths.get(path));
       Files.write(

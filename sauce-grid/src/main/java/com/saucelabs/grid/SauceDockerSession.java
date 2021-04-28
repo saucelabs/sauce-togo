@@ -145,7 +145,6 @@ public class SauceDockerSession extends ProtocolConvertingSession {
 
   private void integrateWithSauce() {
     String sauceJobId = createSauceJob();
-    // TODO: What if the job id is null?
     Container assetUploaderContainer = createAssetUploaderContainer(sauceJobId);
     assetUploaderContainer.start();
   }
@@ -168,7 +167,6 @@ public class SauceDockerSession extends ProtocolConvertingSession {
       .ifPresent(name -> jobInfo.setCapability("name", name.toString()));
     getSauceCapability(getCapabilities(), "tags")
       .ifPresent(tags -> jobInfo.setCapability("tags", tags));
-    // TODO: What time zone is being used?
     SauceCommandInfo firstCommand = webDriverCommands.get(0);
     String startTime = ofEpochSecond(firstCommand.getStartTime()).toString();
     jobInfo.setCapability("startTime", startTime);

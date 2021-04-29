@@ -182,7 +182,7 @@ public class SauceDockerSession extends ProtocolConvertingSession {
       usernameAndPassword.password());
     try {
       HttpClient client = HttpClient.Factory.createDefault().createClient(new URL(apiUrl));
-      HttpRequest request = new HttpRequest(HttpMethod.POST, "/v1/testrunner/reports");
+      HttpRequest request = new HttpRequest(HttpMethod.POST, "/v1/testcomposer/reports");
       request.setContent(asJson(jobInfo));
       request.setHeader(CONTENT_TYPE, JSON_UTF_8);
       HttpResponse response = client.execute(request);

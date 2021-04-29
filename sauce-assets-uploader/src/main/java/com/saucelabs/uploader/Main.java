@@ -41,7 +41,7 @@ public class Main {
       .getOrDefault("SAUCE_API_URL", String.format("https://%s", SAUCE_API_HOST));
 
   private static final String ASSETS_ENDPOINT =
-    String.format("/v1/testrunner/jobs/%s/assets", SAUCE_JOB_ID);
+    String.format("/v1/testcomposer/jobs/%s/assets", SAUCE_JOB_ID);
 
   public static void main(String[] args) {
     try {

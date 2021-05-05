@@ -16,7 +16,11 @@ public enum DataCenter {
     "https://ondemand.us-east-1.saucelabs.com",
     "api.us-east-1.saucelabs.com",
     "https://app.us-east-1.saucelabs.com"),
-  US(US_WEST);
+  US(US_WEST),
+  STAGING(
+    "https://ondemand.staging.saucelabs.net",
+    "api.staging.saucelabs.net",
+    "https://app.staging.saucelabs.net");
   public final String onDemandUrl;
   public final String apiUrl;
   public final String apiHost;

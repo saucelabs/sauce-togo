@@ -180,16 +180,18 @@ public class SauceDockerSession extends ProtocolConvertingSession {
       dataCenter.apiUrl,
       usernameAndPassword.username(),
       usernameAndPassword.password());
+    String responseContents = "";
     try {
       HttpClient client = HttpClient.Factory.createDefault().createClient(new URL(apiUrl));
       HttpRequest request = new HttpRequest(HttpMethod.POST, "/v1/testcomposer/reports");
       request.setContent(asJson(jobInfo));
       request.setHeader(CONTENT_TYPE, JSON_UTF_8);
       HttpResponse response = client.execute(request);
-      Map<String, String> jobId = JSON.toType(Contents.string(response), Map.class);
+      responseContents = Contents.string(response);
+      Map<String, String> jobId = JSON.toType(responseContents, Map.class);
       return jobId.get("ID");
     } catch (Exception e) {
-      LOG.log(Level.WARNING, "Error creating job in Sauce Labs", e);
+      LOG.log(Level.WARNING, String.format("Error creating job in Sauce Labs. %s", responseContents), e);
     }
     return null;
   }

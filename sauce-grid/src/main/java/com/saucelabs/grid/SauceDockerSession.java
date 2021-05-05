@@ -3,7 +3,7 @@ package com.saucelabs.grid;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.saucelabs.grid.Common.JSON;
 import static com.saucelabs.grid.Common.getSauceCapability;
-import static java.time.Instant.ofEpochSecond;
+import static java.time.Instant.ofEpochMilli;
 import static org.openqa.selenium.docker.ContainerConfig.image;
 import static org.openqa.selenium.json.Json.JSON_UTF_8;
 import static org.openqa.selenium.remote.http.Contents.asJson;
@@ -168,10 +168,10 @@ public class SauceDockerSession extends ProtocolConvertingSession {
     getSauceCapability(getCapabilities(), "tags")
       .ifPresent(tags -> jobInfo.setCapability("tags", tags));
     SauceCommandInfo firstCommand = webDriverCommands.get(0);
-    String startTime = ofEpochSecond(firstCommand.getStartTime()).toString();
+    String startTime = ofEpochMilli(firstCommand.getStartTime()).toString();
     jobInfo.setCapability("startTime", startTime);
     SauceCommandInfo lastCommand = webDriverCommands.get(webDriverCommands.size() - 1);
-    String endTime = ofEpochSecond(lastCommand.getStartTime()).toString();
+    String endTime = ofEpochMilli(lastCommand.getStartTime()).toString();
     jobInfo.setCapability("endTime", endTime);
     // TODO: We cannot always know if the test passed or not
     jobInfo.setCapability("passed", true);

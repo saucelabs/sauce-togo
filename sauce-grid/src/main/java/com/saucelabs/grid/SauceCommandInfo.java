@@ -54,18 +54,19 @@ public class SauceCommandInfo {
   }
 
   private Map<String, Object> toJson() {
-    long commandDuration = this.endTime - this.startTime;
-    long inVideoTimeline = this.startTime + (commandDuration / 2) - this.videoStartTime;
+    double commandDuration = (this.endTime - this.startTime) / 1000.0;
+    double betweenCommands = this.betweenCommands / 1000.0;
+    double inVideoTimeline = (this.startTime - this.videoStartTime) / 1000.0;
     return ImmutableMap.<String, Object>builder()
       .put("screenshot", this.screenshotId == -1 ? "null" : this.screenshotId)
       .put("suggestion_values", this.suggestionValues)
-      .put("start_time", this.startTime)
+      .put("start_time", formatTime(this.startTime))
       .put("request", this.request)
       .put("result", this.result)
       .put("duration", commandDuration)
       .put("path", this.path)
       .put("hide_from_ui", false)
-      .put("between_commands", this.betweenCommands)
+      .put("between_commands", betweenCommands)
       .put("visual_command", false)
       .put("HTTPStatus", this.httpStatus)
       .put("suggestion", "null")
@@ -73,6 +74,13 @@ public class SauceCommandInfo {
       .put("method", this.httpMethod)
       .put("statusCode", this.statusCode)
       .build();
+  }
+
+  private String formatTime(long time) {
+    String timeAsString = String.valueOf(time);
+    String millis = timeAsString.substring(timeAsString.length() - 3);
+    String seconds = timeAsString.substring(0, timeAsString.length() - 3);
+    return String.format("%s.%s", seconds, millis);
   }
 
   public static class Builder {

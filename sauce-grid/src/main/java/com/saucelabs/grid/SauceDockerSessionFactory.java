@@ -4,6 +4,7 @@ import static com.saucelabs.grid.Common.JSON;
 import static com.saucelabs.grid.Common.SAUCE_OPTIONS;
 import static com.saucelabs.grid.Common.getSauceCapability;
 import static java.util.Optional.ofNullable;
+import static org.openqa.selenium.ImmutableCapabilities.copyOf;
 import static org.openqa.selenium.docker.ContainerConfig.image;
 import static org.openqa.selenium.remote.Dialect.W3C;
 import static org.openqa.selenium.remote.http.Contents.string;
@@ -105,8 +106,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     this.dockerUri = Require.nonNull("Docker URI", dockerUri);
     this.browserImage = Require.nonNull("Docker browser image", browserImage);
     this.networkName = Require.nonNull("Docker network name", networkName);
-    this.stereotype = ImmutableCapabilities.copyOf(
-      Require.nonNull("Stereotype", stereotype));
+    this.stereotype = copyOf(Require.nonNull("Stereotype", stereotype));
     this.videoImage = videoImage;
     this.assetsUploaderImage = assetsUploaderImage;
     this.assetsPath = assetsPath;
@@ -250,9 +250,9 @@ public class SauceDockerSessionFactory implements SessionFactory {
         EventAttribute.setValue(response.toString()));
 
       SauceCommandInfo commandInfo = new SauceCommandInfo.Builder()
-        .setStartTime(startTime.getEpochSecond())
-        .setVideoStartTime(videoStartTime.getEpochSecond())
-        .setEndTime(Instant.now().getEpochSecond())
+        .setStartTime(startTime.toEpochMilli())
+        .setVideoStartTime(videoStartTime.toEpochMilli())
+        .setEndTime(Instant.now().toEpochMilli())
         .setRequest(sessionReqCaps)
         .setResult(mergedCapabilities)
         .setPath("/session")
@@ -290,7 +290,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
   }
 
   private Capabilities removeSauceKey(Capabilities capabilities) {
-    Capabilities filteredCaps = ImmutableCapabilities.copyOf(capabilities);
+    Capabilities filteredCaps = copyOf(capabilities);
     Object rawSauceOptions = filteredCaps.getCapability(SAUCE_OPTIONS);
     if (rawSauceOptions instanceof Map) {
       @SuppressWarnings("unchecked")

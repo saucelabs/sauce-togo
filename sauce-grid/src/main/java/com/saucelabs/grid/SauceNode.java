@@ -337,8 +337,9 @@ public class SauceNode extends Node {
 
     SauceDockerSession session = (SauceDockerSession) slot.getSession();
     SauceCommandInfo.Builder builder = new SauceCommandInfo.Builder();
-    builder.setStartTime(Instant.now().getEpochSecond());
+    builder.setStartTime(Instant.now().toEpochMilli());
     HttpResponse toReturn = slot.execute(req);
+    builder.setEndTime(Instant.now().toEpochMilli());
 
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
@@ -354,8 +355,7 @@ public class SauceNode extends Node {
     }
     Map<String, Object> parsedResponse =
       JSON.toType(new InputStreamReader(toReturn.getContent().get()), MAP_TYPE);
-    builder.setEndTime(Instant.now().getEpochSecond())
-      .setRequest(getRequestContents(req))
+    builder.setRequest(getRequestContents(req))
       .setResult(parsedResponse)
       .setPath(req.getUri().replace(String.format("/session/%s", id), ""))
       .setHttpStatus(toReturn.getStatus())

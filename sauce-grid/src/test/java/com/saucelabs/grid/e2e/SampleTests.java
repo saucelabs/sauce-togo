@@ -19,6 +19,7 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.net.URL;
+import java.time.Instant;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -26,6 +27,7 @@ public class SampleTests {
 
   private static final Logger LOG = Logger.getLogger(SampleTests.class.getName());
   private static final String SAUCE_OPTIONS_CAPS = "sauce:options";
+  private static final String SAUCE_BUILD_ID = Instant.now().toString();
 
   static Stream<Arguments> browsersAndPlatforms() {
     return Stream.of(
@@ -156,12 +158,13 @@ public class SampleTests {
 
   private MutableCapabilities getSauceOptions(String testName) {
     MutableCapabilities capabilities = new MutableCapabilities();
-    capabilities.setCapability("dataCenter", "EU");
+    capabilities.setCapability("dataCenter", "US");
     capabilities.setCapability("timeZone", "US/Pacific");
     capabilities.setCapability("screenResolution", "1920x1080");
     capabilities.setCapability("username", System.getenv("SAUCE_USERNAME"));
     capabilities.setCapability("accessKey", System.getenv("SAUCE_ACCESS_KEY"));
     capabilities.setCapability("name", testName);
+    capabilities.setCapability("build", SAUCE_BUILD_ID);
     return capabilities;
   }
 }

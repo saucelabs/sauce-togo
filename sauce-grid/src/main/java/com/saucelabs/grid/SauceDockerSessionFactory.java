@@ -200,7 +200,6 @@ public class SauceDockerSessionFactory implements SessionFactory {
         DriverCommand.NEW_SESSION(sessionReqCaps));
       ProtocolHandshake.Result result;
       Response response;
-      Instant startTime = Instant.now();
       try {
         result = new ProtocolHandshake().createSession(client, command);
         response = result.createResponse();
@@ -230,7 +229,6 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
       Container videoContainer = null;
       Optional<DockerAssetsPath> path = ofNullable(this.assetsPath);
-      Instant videoStartTime = Instant.now();
       if (path.isPresent()) {
         // Seems we can store session assets
         String containerPath = path.get().getContainerPath(id);
@@ -238,6 +236,8 @@ public class SauceDockerSessionFactory implements SessionFactory {
         String hostPath = path.get().getHostPath(id);
         videoContainer = startVideoContainer(mergedCapabilities, containerInfo.getIp(), hostPath);
       }
+      Instant startTime = Instant.now();
+      Instant videoStartTime = Instant.now();
 
       Dialect downstream = sessionRequest.getDownstreamDialects().contains(result.getDialect()) ?
                            result.getDialect() :

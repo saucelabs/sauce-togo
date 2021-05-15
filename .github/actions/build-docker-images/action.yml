@@ -1,0 +1,29 @@
+name: 'Build Sauce To Go Docker images'
+description: 'Build Sauce To Go Docker images'
+runs:
+  using: "composite"
+  steps:
+    - name: Get jars version
+      shell: bash
+      run: |
+        echo "JAR_VERSION=$(docker run --rm \
+        -v ${PWD}:/usr/src/mymaven \
+        -v ${PWD}/.m2:/root/.m2 \
+        -w /usr/src/mymaven \
+        maven:3.6.3-jdk-8 ${MVN_COMMAND})" >> $GITHUB_ENV
+      env:
+        MVN_COMMAND: "mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout"
+    - name: Output jars version
+      shell: bash
+      run: echo ${JAR_VERSION}
+    - name: Moving jars to docker directory
+      shell: bash
+      run: |
+        sudo mv sauce-grid/target/sauce-grid-${JAR_VERSION}-jar-with-dependencies.jar docker/selenium-server.jar
+        sudo mv sauce-assets-uploader/target/sauce-assets-uploader-${JAR_VERSION}-jar-with-dependencies.jar docker/sauce-assets-uploader.jar
+    - name: Build Docker images
+      shell: bash
+      run: cd docker && make all && cd ..
+    - name: List Docker images
+      shell: bash
+      run: docker images --filter=reference='saucelabs/*:*' --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}\t{{.Size}}"

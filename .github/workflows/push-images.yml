@@ -17,10 +17,26 @@ jobs:
         uses: ./.github/actions/build-jars
       - name: Build Docker images
         uses: ./.github/actions/build-docker-images
+      - name: Sets next tag (build date)
+        run: echo "NEXT_TAG=$(date '+%Y%m%d')" >> $GITHUB_ENV
       - name: Login to DockerHub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: Push images to Docker Hub
-        run: cd docker && ./push_images.sh
+        run: cd docker && make push_images && cd ..
+      - name: Create release notes
+        run: cd docker && make release_notes && cd ..
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.NEXT_TAG }}
+          release_name: ${{ env.NEXT_TAG }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+

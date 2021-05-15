@@ -40,4 +40,4 @@ jobs:
       - name: Build Docker images
         run: cd docker && make all && cd ..
       - name: List Docker images
-        run: docker images --filter=reference='selenium/*:*' --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}\t{{.Size}}"
+        run: docker images --filter=reference='saucelabs/*:*' --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}\t{{.Size}}"

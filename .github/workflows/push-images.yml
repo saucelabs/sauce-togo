@@ -36,7 +36,7 @@ jobs:
         with:
           tag_name: ${{ env.NEXT_TAG }}
           release_name: ${{ env.NEXT_TAG }}
-          body_path: release_notes.md
+          body_path: docker/release_notes.md
           draft: false
           prerelease: false
 

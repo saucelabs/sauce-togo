@@ -15,7 +15,7 @@ all: stg_video \
 	stg_assets_uploader_latest
 
 stg_video:
-	docker pull selenium/video:$(VIDEO_TAG) && docker tag selenium/video:$(VIDEO_TAG) saucelabs/stg-video:$(VIDEO_TAG)
+	docker pull selenium/video:$(VIDEO_TAG) && docker tag selenium/video:$(VIDEO_TAG) saucelabs/stg-video:$(SAUCE_TAG)
 
 stg_video_latest:
 	docker pull selenium/video:$(VIDEO_TAG) && docker tag selenium/video:$(VIDEO_TAG) saucelabs/stg-video:latest

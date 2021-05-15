@@ -79,7 +79,7 @@ Your test capabilities need to include the `sauce:options` section, here is an e
   "sauce:options": {
     "timeZone": "US/Pacific",
     "screenResolution": "1920x1080",
-    "dataCenter": "EU",
+    "dataCenter": "US",
     "name": "Your test name",
     "username": "Your Sauce user name",
     "accessKey": "Your Sauce access key"

@@ -38,9 +38,9 @@ import java.util.logging.Logger;
 public class SauceDockerOptions {
   private static final String DOCKER_SECTION = "docker";
   private static final String DEFAULT_DOCKER_URL = "unix:/var/run/docker.sock";
-  private static final String DEFAULT_VIDEO_IMAGE = "saucelabs/video:latest";
+  private static final String DEFAULT_VIDEO_IMAGE = "saucelabs/stg-video:latest";
   private static final String DEFAULT_ASSETS_PATH = "/opt/selenium/assets";
-  private static final String DEFAULT_ASSETS_UPLOADER_IMAGE = "saucelabs/assets-uploader:latest";
+  private static final String DEFAULT_ASSETS_UPLOADER_IMAGE = "saucelabs/stg-assets-uploader:latest";
   private static final String DEFAULT_DOCKER_NETWORK = "bridge";
 
   private static final Logger LOG = Logger.getLogger(SauceDockerOptions.class.getName());

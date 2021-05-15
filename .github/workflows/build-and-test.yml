@@ -22,3 +22,14 @@ jobs:
           -v ${PWD}/.m2:/root/.m2 \
           -w /usr/src/mymaven \
           maven:3.6.3-jdk-8 mvn clean package
+      - name: Get jars version
+        run: |
+          echo "JAR_VERSION=$(docker run --rm \
+          -v ${PWD}:/usr/src/mymaven \
+          -v ${PWD}/.m2:/root/.m2 \
+          -w /usr/src/mymaven \
+          maven:3.6.3-jdk-8 ${COMMAND})" >> $GITHUB_ENV
+        env:
+          COMMAND: mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate
+      - name: Output jars version
+        run: echo ${JAR_VERSION}

@@ -6,7 +6,7 @@ Run these commands on the root directory of the project.
 1. We will use a Docker container to build Sauce To Go.
 
 ```shell script
-docker run --rm -ti \
+docker run --rm \
   -v ${PWD}:/usr/src/mymaven \
   -v ${PWD}/.m2:/root/.m2 \
   -w /usr/src/mymaven \

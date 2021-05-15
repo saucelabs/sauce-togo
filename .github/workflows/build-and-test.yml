@@ -35,8 +35,8 @@ jobs:
         run: echo ${JAR_VERSION}
       - name: Moving jars to docker directory
         run: |
-          mv sauce-grid/target/sauce-grid-${JAR_VERSION}-jar-with-dependencies.jar docker/selenium-server.jar
-          mv sauce-assets-uploader/target/sauce-assets-uploader-${JAR_VERSION}-jar-with-dependencies.jar docker/sauce-assets-uploader.jar
+          sudo mv sauce-grid/target/sauce-grid-${JAR_VERSION}-jar-with-dependencies.jar docker/selenium-server.jar
+          sudo mv sauce-assets-uploader/target/sauce-assets-uploader-${JAR_VERSION}-jar-with-dependencies.jar docker/sauce-assets-uploader.jar
       - name: List docker directory
         run: ls docker
       - name: Build docker images

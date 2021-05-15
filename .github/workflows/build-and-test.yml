@@ -30,13 +30,13 @@ jobs:
           -w /usr/src/mymaven \
           maven:3.6.3-jdk-8 ${MVN_COMMAND})" >> $GITHUB_ENV
         env:
-          MVN_COMMAND: "mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate"
+          MVN_COMMAND: "mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dexpression=project.version -q -DforceStdout"
       - name: Output jars version
         run: echo ${JAR_VERSION}
       - name: Moving jars to docker directory
         run: |
           mv sauce-grid/target/sauce-grid-${JAR_VERSION}-jar-with-dependencies.jar docker/selenium-server.jar
-          mv sauce-assets-uploader/target/sauce-assets-uploader-${JAR_VERSION}-jar-with-dependencies.jar docker/sauce-assets-uploader-${JAR_VERSION}.jar
+          mv sauce-assets-uploader/target/sauce-assets-uploader-${JAR_VERSION}-jar-with-dependencies.jar docker/sauce-assets-uploader.jar
       - name: List docker directory
         run: ls docker
       - name: Build docker images

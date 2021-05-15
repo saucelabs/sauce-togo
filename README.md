@@ -19,7 +19,7 @@ docker run --rm \
 # Move the jar with Grid extension to the docker directory 
 mv sauce-grid/target/sauce-grid-0.1-SNAPSHOT-jar-with-dependencies.jar docker/selenium-server.jar
 # Move the Uploader jar to the docker directory
-mv sauce-assets-uploader/target/sauce-assets-uploader-0.1-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader-0.1-SNAPSHOT.jar 
+mv sauce-assets-uploader/target/sauce-assets-uploader-0.1-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader.jar 
 ```
 
 3. Build all the Docker images

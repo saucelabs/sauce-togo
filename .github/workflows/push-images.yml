@@ -22,3 +22,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push images to Docker Hub
+        run: cd docker && ./push_images.sh

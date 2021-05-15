@@ -1,0 +1,42 @@
+name: Push Docker images
+
+on:
+  push:
+    branches:
+      - trunk
+
+jobs:
+  push-images:
+    if: contains(toJson(github.event.commits), '[push]') == true
+    name: Build & push Sauce To Go Docker images to Docker Hub
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Build jars
+        uses: ./.github/actions/build-jars
+      - name: Build Docker images
+        uses: ./.github/actions/build-docker-images
+      - name: Sets next tag (build date)
+        run: echo "NEXT_TAG=$(date '+%Y%m%d')" >> $GITHUB_ENV
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push images to Docker Hub
+        run: cd docker && make push_images && cd ..
+      - name: Create release notes
+        run: cd docker && make release_notes && cd ..
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.NEXT_TAG }}
+          release_name: ${{ env.NEXT_TAG }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+

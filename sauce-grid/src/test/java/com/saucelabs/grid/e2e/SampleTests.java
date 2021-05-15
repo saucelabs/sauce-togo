@@ -36,6 +36,7 @@ public class SampleTests {
       arguments(BrowserType.FIREFOX, Platform.LINUX)
     );
   }
+
   public RemoteWebDriver createDriver(String testName, String browserName, Platform platformName)
     throws Exception {
     LOG.info("Running " + testName);
@@ -146,8 +147,6 @@ public class SampleTests {
       driver.quit();
     }
   }
-
-
 
   private String getTestName(TestInfo testInfo) {
     if (testInfo.getTestMethod().isPresent()) {

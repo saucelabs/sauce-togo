@@ -126,10 +126,10 @@ public class SampleTests {
     }
   }
 
-  private void loginToSauceDemo(RemoteWebDriver driver, String bad, String bad2) {
+  private void loginToSauceDemo(RemoteWebDriver driver, String user, String password) {
     driver.get("https://www.saucedemo.com");
-    driver.findElement(By.id("user-name")).sendKeys(bad);
-    driver.findElement(By.id("password")).sendKeys(bad2);
+    driver.findElement(By.id("user-name")).sendKeys(user);
+    driver.findElement(By.id("password")).sendKeys(password);
     driver.findElement(By.className("btn_action")).click();
   }
 

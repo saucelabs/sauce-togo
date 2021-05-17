@@ -59,18 +59,15 @@ Your test capabilities need to include the `sauce:options` section, here is an e
 ```java
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 
-// This code is using Selenium 4 and JUnit 5, it works with Selenium 3 with minor adjustments.
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class DemoTest {
   @Test
   public void demoTest() throws MalformedURLException {
@@ -87,19 +84,27 @@ public class DemoTest {
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
-    RemoteWebDriver webDriver = new RemoteWebDriver(gridUrl, firefoxOptions);
+    RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
 
     try {
-      // Quick search for the 'webdriver' keyword
-      webDriver.get("http://www.google.com/ncr");
-      webDriver.findElement(By.name("q")).sendKeys("webdriver", Keys.RETURN);
-      WebDriverWait webDriverWait = new WebDriverWait(webDriver, Duration.ofSeconds(5));
-      webDriverWait.until(ExpectedConditions.titleContains("webdriver"));
+      // Log in to www.saucedemo.com
+      driver.get("https://www.saucedemo.com");
+      driver.findElement(By.id("user-name")).sendKeys("standard_user");
+      driver.findElement(By.id("password")).sendKeys("secret_sauce");
+      driver.findElement(By.className("btn_action")).click();
+
+      // Add two items to the shopping cart
+      driver.get("https://www.saucedemo.com/inventory.html");
+      driver.findElement(By.className("btn_primary")).click();
+      driver.findElement(By.className("btn_primary")).click();
+      assertEquals("2", driver.findElement(By.className("shopping_cart_badge")).getText());
+
+      // Assert we have two items in the shopping cart
+      driver.get("http://www.saucedemo.com/cart.html");
+      assertEquals(2, driver.findElements(By.className("inventory_item_name")).size());
     } finally {
-      webDriver.quit();
+      driver.quit();
     }
   }
 }
 ```
-
-The values for `username` and `accessKey` are mandatory.

@@ -72,6 +72,9 @@ To double check, you can run `docker images --filter=reference='saucelabs/*:*'` 
 generated images. To run Sauce To Go, please refer to the instructions described on the 
 [README](./README.md). Be sure to use the same tags you used to generate the Docker images.
 
+You run some sample [tests](sauce-grid/src/test/java/com/saucelabs/grid/e2e/SampleTests.java) to
+verify your changes.
+
 ### Debugging and running Sauce Grid outside Docker
 
 Please check the comments in the [Main](./sauce-grid/src/main/java/com/saucelabs/grid/Main.java)

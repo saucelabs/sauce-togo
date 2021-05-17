@@ -28,6 +28,7 @@ public class SampleTests {
   private static final Logger LOG = Logger.getLogger(SampleTests.class.getName());
   private static final String SAUCE_OPTIONS_CAPS = "sauce:options";
   private static final String SAUCE_BUILD_ID = Instant.now().toString();
+  private static final String SAUCE_TO_GO_URL = "http://localhost:4444";
 
   static Stream<Arguments> browsersAndPlatforms() {
     return Stream.of(
@@ -40,7 +41,7 @@ public class SampleTests {
   public RemoteWebDriver createDriver(String testName, String browserName, Platform platformName)
     throws Exception {
     LOG.info("Running " + testName);
-    URL gridUrl = new URL("http://localhost:4444");
+    URL gridUrl = new URL(SAUCE_TO_GO_URL);
     MutableCapabilities capabilities;
     switch (browserName) {
       case BrowserType.CHROME:

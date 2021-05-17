@@ -61,9 +61,9 @@ docker run --rm --name sauce-togo -p 4444:4444 \
     saucelabs/stg-standalone:20210515
 ```
 
-### 3. Run your tests and point them to `http://localhost:4444` 
+### 3. Run your tests and check them in [Sauce Labs](https://app.saucelabs.com/)
 
-Pointing them to `http://localhost:4444/wd/hub` also works.
+Point them to either `http://localhost:4444` or to `http://localhost:4444/wd/hub`.
 
 Your test capabilities need to include the `sauce:options` section, here is an example: 
 
@@ -120,4 +120,3 @@ public class DemoTest {
 }
 ```
 
-### 4. Check your tests in [Sauce Labs](https://app.saucelabs.com/)

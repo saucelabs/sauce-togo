@@ -9,6 +9,11 @@ _You'll need an active Sauce Labs account to use Sauce To Go, if you don't have 
 
 ### 1. Create a directory on a path Docker can access and copy the following configuration example. 
 
+
+https://user-images.githubusercontent.com/5992658/118480134-24d27a00-b712-11eb-90be-4ba59c1bd01f.mp4
+
+
+
 Save the file as `config.toml`
 
 Check the comments in the configuration example for specific adjustments on each operating system.

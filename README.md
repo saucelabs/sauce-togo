@@ -7,9 +7,9 @@
 # Configs have a mapping between the Docker image to use and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:88.0", "{\"browserName\": \"firefox\", \"platformName\": \"linux\"}",
-    "saucelabs/stg-edge:91.0", "{\"browserName\": \"MicrosoftEdge\", \"platformName\": \"linux\"}",
-    "saucelabs/stg-chrome:90.0", "{\"browserName\": \"chrome\", \"platformName\": \"linux\"}"
+    "saucelabs/stg-firefox:88.0", '{"browserName": "firefox", "platformName": "linux"}',
+    "saucelabs/stg-edge:91.0", '{"browserName": "MicrosoftEdge", "platformName": "linux"}',
+    "saucelabs/stg-chrome:90.0", '{"browserName": "chrome", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon
@@ -39,7 +39,7 @@ docker run --rm -ti --name sauce-togo -p 4444:4444 \
     saucelabs/stg-standalone:20210515
 ```
 
-6. Run your tests and point them to `http://localhost:4444` or `http://localhost:4444/wd/hub`
+3. Run your tests and point them to `http://localhost:4444` or `http://localhost:4444/wd/hub`
 
 Your test capabilities need to include the `sauce:options` section, here is an example: 
 
@@ -61,36 +61,3 @@ Your test capabilities need to include the `sauce:options` section, here is an e
 The values for `username` and `accessKey` are mandatory.
 
 You can see some sample tests [here](sauce-grid/src/test/java/com/saucelabs/grid/e2e/SampleTests.java).
-
-## How to build Sauce To Go
-> This project is still a PoC, build instructions might be incomplete.
-
-Run these commands on the root directory of the project.
-
-1. We will use a Docker container to build Sauce To Go.
-
-```shell script
-docker run --rm \
-  -v ${PWD}:/usr/src/mymaven \
-  -v ${PWD}/.m2:/root/.m2 \
-  -w /usr/src/mymaven \
-  maven:3.6.3-jdk-8 mvn clean package
-```
-
-2. Move the generated jars to the `docker` directory, we'll use them to build the Docker images
-
-```shell script
-# Move the jar with Grid extension to the docker directory 
-mv sauce-grid/target/sauce-grid-0.1-SNAPSHOT-jar-with-dependencies.jar docker/selenium-server.jar
-# Move the Uploader jar to the docker directory
-mv sauce-assets-uploader/target/sauce-assets-uploader-0.1-SNAPSHOT-jar-with-dependencies.jar docker/sauce-assets-uploader.jar 
-```
-
-3. Build all the Docker images
-
-```shell script
-# Go to the docker directory and build all the Docker images
-cd docker && make all
-```
-
-You can see now follow the instructions above which show how to run Sauce To Go.

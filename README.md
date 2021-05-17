@@ -1,10 +1,15 @@
 ## How to run Sauce To Go
 
-1. Create a configuration file. Place it on a directory that Docker can access.
+You'll need an active Sauce Labs account to use Sauce To Go, if you don't have one yet, please
+[sign-up](https://saucelabs.com/sign-up).
+
+1. Copy the following configuration example and place it on a directory that Docker can access.
+
+Check the comments in the configuration example for specific adjustments on each operating system.
 
 ```toml
 [docker]
-# Configs have a mapping between the Docker image to use and the capabilities that need to be matched to
+# Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
     "saucelabs/stg-firefox:88.0", '{"browserName": "firefox", "platformName": "linux"}',
@@ -13,8 +18,8 @@ configs = [
 ]
 
 # URL for connecting to the docker daemon
-# host.docker.internal works for macOS and Windows.
-# Linux could use --net=host in the `docker run` instruction or 172.17.0.1 in the URI below.
+# Linux: 172.17.0.1 (make sure the Docker deamon is listening to this url first) 
+# Docker Desktop on macOS and Windows: host.docker.internal
 # To have Docker listening through tcp on macOS, install socat and run the following command
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
@@ -32,7 +37,7 @@ implementation = "com.saucelabs.grid.SauceNodeFactory"
 You'll need to mount two volumes. The first one is the absolute path where the config file from
 step 4 is, and the second one is an absolute path where you'd like the test assets to be stored. 
 
-```shell script
+```sh
 docker run --rm -ti --name sauce-togo -p 4444:4444 \
     -v /absolute/path/to/your/sauce/togo/config.toml:/opt/bin/config.toml \
     -v /absolute/path/to/your/assets/directory:/opt/selenium/assets \
@@ -47,6 +52,7 @@ Your test capabilities need to include the `sauce:options` section, here is an e
 {
   "browserName": "firefox",
   "platformName": "linux",
+  "browserVersion": "88.0",
   "sauce:options": {
     "timeZone": "US/Pacific",
     "screenResolution": "1920x1080",

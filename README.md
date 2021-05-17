@@ -7,8 +7,9 @@ _You'll need an active Sauce Labs account to use Sauce To Go, if you don't have 
 
 ## How to run Sauce To Go
 
-1. Create a directory on a path Docker can access and copy the following configuration example. 
-Save the file as `config.toml`.
+### 1. Create a directory on a path Docker can access and copy the following configuration example. 
+
+Save the file as `config.toml`
 
 Check the comments in the configuration example for specific adjustments on each operating system.
 
@@ -37,7 +38,7 @@ assets-uploader-image = "saucelabs/stg-assets-uploader:20210515"
 implementation = "com.saucelabs.grid.SauceNodeFactory"
 ```
 
-2. Run Sauce To Go
+### 2. Run Sauce To Go
 
 You'll need to mount two volumes. The first one is the absolute path where the config file from
 step 1 is, and the second one is an absolute path where the test assets will be temporarily stored. 
@@ -49,7 +50,9 @@ docker run --rm -ti --name sauce-togo -p 4444:4444 \
     saucelabs/stg-standalone:20210515
 ```
 
-3. Run your tests and point them to `http://localhost:4444` or `http://localhost:4444/wd/hub`
+### 3. Run your tests and point them to `http://localhost:4444` 
+
+Pointing them to `http://localhost:4444/wd/hub` also works.
 
 Your test capabilities need to include the `sauce:options` section, here is an example: 
 
@@ -78,7 +81,7 @@ public class DemoTest {
     sauceOptions.setCapability("screenResolution", "1920x1080");
     sauceOptions.setCapability("username", System.getenv("SAUCE_USERNAME"));
     sauceOptions.setCapability("accessKey", System.getenv("SAUCE_ACCESS_KEY"));
-    sauceOptions.setCapability("name", "standaloneTest");
+    sauceOptions.setCapability("name", "demoTest");
 
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();

@@ -38,6 +38,16 @@ assets-uploader-image = "saucelabs/stg-assets-uploader:20210515"
 implementation = "com.saucelabs.grid.SauceNodeFactory"
 ```
 
+**Tip:** To improve loading time, pull the Docker images before moving to step two.
+
+```sh
+docker pull saucelabs/stg-firefox:88.0
+docker pull saucelabs/stg-edge:91.0
+docker pull saucelabs/stg-chrome:90.0
+docker pull saucelabs/stg-video:ffmpeg-4.3.1-20210513
+docker pull saucelabs/stg-assets-uploader:20210515
+```
+
 ### 2. Run Sauce To Go
 
 You'll need to mount two volumes. The first one is the absolute path where the config file from

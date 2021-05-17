@@ -38,7 +38,8 @@ assets-uploader-image = "saucelabs/stg-assets-uploader:20210515"
 implementation = "com.saucelabs.grid.SauceNodeFactory"
 ```
 
-**Tip:** To improve loading time, pull the Docker images before moving to step two.
+**Tip:** To improve loading time, pull the Docker images before moving to step two 
+(only needed once).
 
 ```sh
 docker pull saucelabs/stg-firefox:88.0
@@ -50,13 +51,13 @@ docker pull saucelabs/stg-assets-uploader:20210515
 
 ### 2. Run Sauce To Go
 
-You'll need to mount two volumes. The first one is the absolute path where the config file from
-step 1 is, and the second one is an absolute path where the test assets will be temporarily stored. 
+You'll need to mount two volumes. The first one is the path where the config file from
+step 1 is, and the second one is the path where the test assets will be temporarily stored. 
 
 ```sh
-docker run --rm -ti --name sauce-togo -p 4444:4444 \
-    -v /absolute/path/to/your/sauce/togo/config.toml:/opt/bin/config.toml \
-    -v /absolute/path/to/your/assets/directory:/opt/selenium/assets \
+docker run --rm --name sauce-togo -p 4444:4444 \
+    -v /path/to/your/config.toml:/opt/bin/config.toml \
+    -v /path/to/your/assets/directory:/opt/selenium/assets \
     saucelabs/stg-standalone:20210515
 ```
 
@@ -118,3 +119,5 @@ public class DemoTest {
   }
 }
 ```
+
+### 4. Check your tests in [Sauce Labs](https://app.saucelabs.com/)

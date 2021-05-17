@@ -56,6 +56,11 @@ docker pull saucelabs/stg-assets-uploader:20210515
 
 ### 2. Run Sauce To Go
 
+
+https://user-images.githubusercontent.com/5992658/118480326-5ea38080-b712-11eb-8118-c27fe5e7cdcc.mp4
+
+
+
 You'll need to mount two volumes. The first one is the path where the config file from
 step 1 is, and the second one is the path where the test assets will be temporarily stored. 
 

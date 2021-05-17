@@ -96,6 +96,7 @@ public class DemoTest {
     firefoxOptions.setCapability("platformName", "linux");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
+    driver.manage().window().maximize();
 
     try {
       // Log in to www.saucedemo.com

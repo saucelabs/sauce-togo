@@ -10,12 +10,11 @@ _You'll need an active Sauce Labs account to use Sauce To Go, if you don't have 
 ### 1. Create a directory on a path Docker can access and copy the following configuration example. 
 
 <video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/118480134-24d27a00-b712-11eb-90be-4ba59c1bd01f.mp4" type="video/mp4">
+  <source src="https://user-images.githubusercontent.com/5992658/119869247-4ad0f900-bf20-11eb-9ba3-1f593ce5ea4f.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video> 
 
-https://user-images.githubusercontent.com/5992658/118480134-24d27a00-b712-11eb-90be-4ba59c1bd01f.mp4
-
+https://user-images.githubusercontent.com/5992658/119869247-4ad0f900-bf20-11eb-9ba3-1f593ce5ea4f.mp4
 
 
 Save the file as `config.toml`
@@ -61,11 +60,12 @@ docker pull saucelabs/stg-assets-uploader:20210527
 ### 2. Run Sauce To Go
 
 <video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/118480326-5ea38080-b712-11eb-8118-c27fe5e7cdcc.mp4" type="video/mp4">
+  <source src="https://user-images.githubusercontent.com/5992658/119869320-61775000-bf20-11eb-8add-8743bf4f7c64.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video> 
 
-https://user-images.githubusercontent.com/5992658/118480326-5ea38080-b712-11eb-8118-c27fe5e7cdcc.mp4
+https://user-images.githubusercontent.com/5992658/119869320-61775000-bf20-11eb-8add-8743bf4f7c64.mp4
+
 
 
 
@@ -82,11 +82,13 @@ docker run --rm --name sauce-togo -p 4444:4444 \
 ### 3. Run your tests and check them in [Sauce Labs](https://app.saucelabs.com/)
 
 <video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/118481391-bb536b00-b713-11eb-8c3b-e2bc5504875a.mp4" type="video/mp4">
+  <source src="https://user-images.githubusercontent.com/5992658/119869376-7227c600-bf20-11eb-8ed3-8676014c73e9.mp4" type="video/mp4">
   Your browser does not support the video tag.
 </video> 
 
-https://user-images.githubusercontent.com/5992658/118481391-bb536b00-b713-11eb-8c3b-e2bc5504875a.mp4
+
+https://user-images.githubusercontent.com/5992658/119869376-7227c600-bf20-11eb-8ed3-8676014c73e9.mp4
+
 
 
 Point them to either `http://localhost:4444` or to `http://localhost:4444/wd/hub`.

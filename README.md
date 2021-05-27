@@ -9,6 +9,10 @@ _You'll need an active Sauce Labs account to use Sauce To Go, if you don't have 
 
 ### 1. Create a directory on a path Docker can access and copy the following configuration example. 
 
+<video width="800"  height="450" controls>
+  <source src="https://user-images.githubusercontent.com/5992658/118480134-24d27a00-b712-11eb-90be-4ba59c1bd01f.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video> 
 
 https://user-images.githubusercontent.com/5992658/118480134-24d27a00-b712-11eb-90be-4ba59c1bd01f.mp4
 
@@ -56,6 +60,10 @@ docker pull saucelabs/stg-assets-uploader:20210515
 
 ### 2. Run Sauce To Go
 
+<video width="800"  height="450" controls>
+  <source src="https://user-images.githubusercontent.com/5992658/118480326-5ea38080-b712-11eb-8118-c27fe5e7cdcc.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video> 
 
 https://user-images.githubusercontent.com/5992658/118480326-5ea38080-b712-11eb-8118-c27fe5e7cdcc.mp4
 
@@ -73,6 +81,10 @@ docker run --rm --name sauce-togo -p 4444:4444 \
 
 ### 3. Run your tests and check them in [Sauce Labs](https://app.saucelabs.com/)
 
+<video width="800"  height="450" controls>
+  <source src="https://user-images.githubusercontent.com/5992658/118481391-bb536b00-b713-11eb-8c3b-e2bc5504875a.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video> 
 
 https://user-images.githubusercontent.com/5992658/118481391-bb536b00-b713-11eb-8c3b-e2bc5504875a.mp4
 

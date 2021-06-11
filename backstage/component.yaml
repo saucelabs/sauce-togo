@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: Sauce To Go
+  description: Run tests on your infrastructure and see the results in Sauce Labs. 
+  annotations:
+    backstage.io/techdocs-ref: url:https://github.com/saucelabs/sauce-togo/tree/backstage-integration/backstage
+spec:
+  type: service
+  lifecycle: production
+  owner: opensource
+  system: production
+  providesApis:
+    - Placeholder API
+

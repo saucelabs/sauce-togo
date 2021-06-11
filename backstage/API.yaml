@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: Placeholder API
+  description: 
+spec:
+  type: openapi
+  lifecycle: production
+  owner: opensource
+  system: production
+  definition:
+    $text: https://app.testobject.com/api/rest/swagger.json

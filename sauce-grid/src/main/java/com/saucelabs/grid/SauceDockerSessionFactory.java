@@ -139,9 +139,6 @@ public class SauceDockerSessionFactory implements SessionFactory {
     UsernameAndPassword usernameAndPassword =
       new UsernameAndPassword(userName.get().toString(), accessKey.get().toString());
 
-    Capabilities sessionReqCaps = removeSauceKey(sessionRequest.getDesiredCapabilities());
-    LOG.info("Starting session for " + sessionReqCaps);
-
     Optional<Object> dc =
       getSauceCapability(sessionRequest.getDesiredCapabilities(), "dataCenter");
     DataCenter dataCenter = DataCenter.US_WEST;
@@ -149,13 +146,18 @@ public class SauceDockerSessionFactory implements SessionFactory {
       dataCenter = DataCenter.fromString(String.valueOf(dc.get()));
     }
 
+    Capabilities sessionReqCaps = removeSauceKey(sessionRequest.getDesiredCapabilities());
+    LOG.info("Starting session for " + sessionReqCaps);
+
     int port = runningInDocker ? 4444 : PortProber.findFreePort();
     try (Span span = tracer.getCurrentContext().createSpan("docker_session_factory.apply")) {
       Map<String, EventAttributeValue> attributeMap = new HashMap<>();
       attributeMap.put(AttributeKey.LOGGER_CLASS.getKey(),
                        EventAttribute.setValue(this.getClass().getName()));
 
-      LOG.info("Creating container, mapping container port 4444 to " + port);
+      String logMessage = runningInDocker ? "Creating container..." :
+                          "Creating container, mapping container port 4444 to " + port;
+      LOG.info(logMessage);
       Container container = createBrowserContainer(port, sessionReqCaps);
       container.start();
       ContainerInfo containerInfo = container.inspect();
@@ -289,19 +291,6 @@ public class SauceDockerSessionFactory implements SessionFactory {
     }
   }
 
-  private Capabilities removeSauceKey(Capabilities capabilities) {
-    Capabilities filteredCaps = copyOf(capabilities);
-    Object rawSauceOptions = filteredCaps.getCapability(SAUCE_OPTIONS);
-    if (rawSauceOptions instanceof Map) {
-      @SuppressWarnings("unchecked")
-      Map<String, Object> original = (Map<String, Object>) rawSauceOptions;
-      Map<String, Object> updated = new TreeMap<>(original);
-      updated.remove("accessKey");
-      return new PersistentCapabilities(filteredCaps).setCapability(SAUCE_OPTIONS, updated);
-    }
-    return capabilities;
-  }
-
   private Container createBrowserContainer(int port, Capabilities sessionCapabilities) {
     Map<String, String> browserContainerEnvVars = getBrowserContainerEnvVars(sessionCapabilities);
     // TODO: Use `shmSize` when rc-1 is released
@@ -334,15 +323,34 @@ public class SauceDockerSessionFactory implements SessionFactory {
     if (!recordVideoForSession(sessionCapabilities)) {
       return null;
     }
+    int videoPort = 9000;
     Map<String, String> envVars = getVideoContainerEnvVars(
       sessionCapabilities,
       browserContainerIp);
     Map<String, String> volumeBinds = Collections.singletonMap(hostPath, "/videos");
-    Container videoContainer = docker.create(image(videoImage)
-                                               .env(envVars)
-                                               .bind(volumeBinds)
-                                               .network(networkName));
+    ContainerConfig containerConfig = image(videoImage)
+      .env(envVars)
+      .bind(volumeBinds)
+      .network(networkName);
+    if (!runningInDocker) {
+      videoPort = PortProber.findFreePort();
+      containerConfig = containerConfig.map(Port.tcp(9000), Port.tcp(videoPort));
+    }
+    Container videoContainer = docker.create(containerConfig);
     videoContainer.start();
+    String videoContainerIp = runningInDocker ? videoContainer.inspect().getIp() : "localhost";
+    try {
+      URL videoContainerUrl = new URL(String.format("http://%s:%s", videoContainerIp, videoPort));
+      HttpClient videoClient = clientFactory.createClient(videoContainerUrl);
+      LOG.fine(String.format("Waiting for video recording... (id: %s)", videoContainer.getId()));
+      waitForServerToStart(videoClient, Duration.ofMinutes(1));
+    } catch (Exception e) {
+      videoContainer.stop(Duration.ofSeconds(10));
+      String message = String.format(
+        "Unable to verify video recording started (container id: %s), %s", videoContainer.getId(),
+        e.getMessage());
+      LOG.warning(message);
+    }
     LOG.info(String.format("Video container started (id: %s)", videoContainer.getId()));
     return videoContainer;
   }
@@ -443,6 +451,19 @@ public class SauceDockerSessionFactory implements SessionFactory {
     } catch (MalformedURLException e) {
       throw new SessionNotCreatedException(e.getMessage(), e);
     }
+  }
+
+  private Capabilities removeSauceKey(Capabilities capabilities) {
+    Capabilities filteredCaps = copyOf(capabilities);
+    Object rawSauceOptions = filteredCaps.getCapability(SAUCE_OPTIONS);
+    if (rawSauceOptions instanceof Map) {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> original = (Map<String, Object>) rawSauceOptions;
+      Map<String, Object> updated = new TreeMap<>(original);
+      updated.remove("accessKey");
+      return new PersistentCapabilities(filteredCaps).setCapability(SAUCE_OPTIONS, updated);
+    }
+    return capabilities;
   }
 
 }

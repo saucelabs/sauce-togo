@@ -126,9 +126,9 @@ public class SauceDockerSessionFactory implements SessionFactory {
   @Override
   public Either<WebDriverException, ActiveSession> apply(CreateSessionRequest sessionRequest) {
     Optional<Object> accessKey =
-      getSauceCapability(sessionRequest.getCapabilities(), "accessKey");
+      getSauceCapability(sessionRequest.getDesiredCapabilities(), "accessKey");
     Optional<Object> userName =
-      getSauceCapability(sessionRequest.getCapabilities(), "username");
+      getSauceCapability(sessionRequest.getDesiredCapabilities(), "username");
     if (!accessKey.isPresent() && !userName.isPresent()) {
       String message = String.format("Unable to create session. No Sauce Labs accessKey and "
                        + "username were found in the '%s' block.", SAUCE_OPTIONS);
@@ -139,11 +139,11 @@ public class SauceDockerSessionFactory implements SessionFactory {
     UsernameAndPassword usernameAndPassword =
       new UsernameAndPassword(userName.get().toString(), accessKey.get().toString());
 
-    Capabilities sessionReqCaps = removeSauceKey(sessionRequest.getCapabilities());
+    Capabilities sessionReqCaps = removeSauceKey(sessionRequest.getDesiredCapabilities());
     LOG.info("Starting session for " + sessionReqCaps);
 
     Optional<Object> dc =
-      getSauceCapability(sessionRequest.getCapabilities(), "dataCenter");
+      getSauceCapability(sessionRequest.getDesiredCapabilities(), "dataCenter");
     DataCenter dataCenter = DataCenter.US_WEST;
     if (dc.isPresent()) {
       dataCenter = DataCenter.fromString(String.valueOf(dc.get()));
@@ -304,6 +304,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   private Container createBrowserContainer(int port, Capabilities sessionCapabilities) {
     Map<String, String> browserContainerEnvVars = getBrowserContainerEnvVars(sessionCapabilities);
+    // TODO: Use `shmSize` when rc-1 is released
     Map<String, String> devShmMount = Collections.singletonMap("/dev/shm", "/dev/shm");
     ContainerConfig containerConfig = image(browserImage)
       .env(browserContainerEnvVars)

@@ -35,9 +35,9 @@ import org.openqa.selenium.RetrySessionRequestException;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.concurrent.Regularly;
 import org.openqa.selenium.events.EventBus;
+import org.openqa.selenium.grid.data.Availability;
 import org.openqa.selenium.grid.data.CreateSessionRequest;
 import org.openqa.selenium.grid.data.CreateSessionResponse;
-import org.openqa.selenium.grid.data.NodeAddedEvent;
 import org.openqa.selenium.grid.data.NodeDrainComplete;
 import org.openqa.selenium.grid.data.NodeDrainStarted;
 import org.openqa.selenium.grid.data.NodeHeartBeatEvent;
@@ -48,6 +48,9 @@ import org.openqa.selenium.grid.data.SessionClosedEvent;
 import org.openqa.selenium.grid.data.Slot;
 import org.openqa.selenium.grid.data.SlotId;
 import org.openqa.selenium.grid.docker.DockerAssetsPath;
+import org.openqa.selenium.grid.jmx.JMXHelper;
+import org.openqa.selenium.grid.jmx.ManagedAttribute;
+import org.openqa.selenium.grid.jmx.ManagedService;
 import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.HealthCheck;
 import org.openqa.selenium.grid.node.Node;
@@ -56,6 +59,7 @@ import org.openqa.selenium.grid.node.config.NodeOptions;
 import org.openqa.selenium.grid.node.local.LocalNode;
 import org.openqa.selenium.grid.node.local.SessionSlot;
 import org.openqa.selenium.grid.security.Secret;
+import org.openqa.selenium.internal.Debug;
 import org.openqa.selenium.internal.Either;
 import org.openqa.selenium.internal.Require;
 import org.openqa.selenium.io.TemporaryFilesystem;
@@ -91,12 +95,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+@ManagedService(objectName = "com.saucelabs.grid:type=Node,name=SauceNode",
+  description = "SauceNode running the webdriver sessions and uploading results to Sauce.")
 public class SauceNode extends Node {
   private static final Logger LOG = Logger.getLogger(LocalNode.class.getName());
   private final EventBus bus;
@@ -110,7 +115,6 @@ public class SauceNode extends Node {
   private final Cache<SessionId, TemporaryFilesystem> tempFileSystems;
   private final Regularly regularly;
   private final AtomicInteger pendingSessions = new AtomicInteger();
-  private final AtomicBoolean heartBeatStarted = new AtomicBoolean(false);
 
   private SauceNode(
     Tracer tracer,
@@ -145,12 +149,12 @@ public class SauceNode extends Node {
       .expireAfterAccess(sessionTimeout)
       .ticker(ticker)
       .removalListener((RemovalListener<SessionId, SessionSlot>) notification -> {
-        // If we were invoked explicitly, then return: we know what we're doing.
-        if (!notification.wasEvicted()) {
-          return;
+        // Attempt to stop the session
+        LOG.log(Debug.getDebugLogLevel(), "Stopping session %s", notification.getKey().toString());
+        SessionSlot slot = notification.getValue();
+        if (!slot.isAvailable()) {
+          slot.stop();
         }
-
-        killSession(notification.getValue());
       })
       .build();
 
@@ -167,22 +171,10 @@ public class SauceNode extends Node {
     this.regularly = new Regularly("Local Node: " + externalUri);
     regularly.submit(currentSessions::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
     regularly.submit(tempFileSystems::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
-
-    bus.addListener(NodeAddedEvent.listener(nodeId -> {
-      if (getId().equals(nodeId)) {
-        // Lets avoid to create more than one "Regularly" when the Node registers again.
-        if (!heartBeatStarted.getAndSet(true)) {
-          regularly.submit(
-            () -> bus.fire(new NodeHeartBeatEvent(getStatus())), heartbeatPeriod, heartbeatPeriod);
-        }
-      }
-    }));
+    regularly.submit(() -> bus.fire(new NodeHeartBeatEvent(getStatus())), heartbeatPeriod, heartbeatPeriod);
 
     bus.addListener(SessionClosedEvent.listener(id -> {
-      try {
-        this.stop(id);
-      } catch (NoSuchSessionException ignore) {
-      }
+      // Listen to session terminated events so we know when to fire the NodeDrainComplete event
       if (this.isDraining()) {
         int done = pendingSessions.decrementAndGet();
         if (done <= 0) {
@@ -191,6 +183,19 @@ public class SauceNode extends Node {
         }
       }
     }));
+
+    // TODO: Add shutdown hook when RC-1 is released
+    // ShutdownHooks.add(new Thread(this::stopAllSessions));
+    new JMXHelper().register(this);
+  }
+
+  public static SauceNode.Builder builder(
+    Tracer tracer,
+    EventBus bus,
+    URI uri,
+    URI gridUri,
+    Secret registrationSecret) {
+    return new SauceNode.Builder(tracer, bus, uri, gridUri, registrationSecret);
   }
 
   @Override
@@ -202,6 +207,47 @@ public class SauceNode extends Node {
   public int getCurrentSessionCount() {
     // It seems wildly unlikely we'll overflow an int
     return Math.toIntExact(currentSessions.size());
+  }
+
+  @ManagedAttribute(name = "MaxSessions")
+  public int getMaxSessionCount() {
+    return maxSessionCount;
+  }
+
+  @ManagedAttribute(name = "Status")
+  public Availability getAvailability() {
+    return isDraining() ? DRAINING : UP;
+  }
+
+  @ManagedAttribute(name = "TotalSlots")
+  public int getTotalSlots() {
+    return factories.size();
+  }
+
+  @ManagedAttribute(name = "UsedSlots")
+  public long getUsedSlots() {
+    return factories.stream().filter(sessionSlot -> !sessionSlot.isAvailable()).count();
+  }
+
+  @ManagedAttribute(name = "Load")
+  public float getLoad() {
+    long inUse = factories.stream().filter(sessionSlot -> !sessionSlot.isAvailable()).count();
+    return inUse / (float) maxSessionCount * 100f;
+  }
+
+  @ManagedAttribute(name = "RemoteNodeUri")
+  public URI getExternalUri() {
+    return this.getUri();
+  }
+
+  @ManagedAttribute(name = "GridUri")
+  public URI getGridUri() {
+    return this.gridUri;
+  }
+
+  @ManagedAttribute(name = "NodeId")
+  public String getNodeId() {
+    return getId().toString();
   }
 
   @Override
@@ -219,9 +265,10 @@ public class SauceNode extends Node {
         .put(AttributeKey.LOGGER_CLASS.getKey(), EventAttribute.setValue(getClass().getName()));
       LOG.fine("Creating new session using span: " + span);
       attributeMap.put("session.request.capabilities",
-                       EventAttribute.setValue(sessionRequest.getCapabilities().toString()));
+                       EventAttribute.setValue(sessionRequest.getDesiredCapabilities().toString()));
       attributeMap.put("session.request.downstreamdialect",
                        EventAttribute.setValue(sessionRequest.getDownstreamDialects().toString()));
+
       int currentSessionCount = getCurrentSessionCount();
       span.setAttribute("current.session.count", currentSessionCount);
       attributeMap.put("current.session.count", EventAttribute.setValue(currentSessionCount));
@@ -243,7 +290,7 @@ public class SauceNode extends Node {
       SessionSlot slotToUse = null;
       synchronized(factories) {
         for (SessionSlot factory : factories) {
-          if (!factory.isAvailable() || !factory.test(sessionRequest.getCapabilities())) {
+          if (!factory.isAvailable() || !factory.test(sessionRequest.getDesiredCapabilities())) {
             continue;
           }
 
@@ -280,10 +327,9 @@ public class SauceNode extends Node {
 
         // The session we return has to look like it came from the node, since we might be dealing
         // with a webdriver implementation that only accepts connections from localhost
-        Session externalSession = createExternalSession(
-          session,
-          externalUri,
-          slotToUse.isSupportingCdp() || caps.getCapability("se:cdp") != null);
+        boolean isSupportingCdp = slotToUse.isSupportingCdp() ||
+                                  caps.getCapability("se:cdp") != null;
+        Session externalSession = createExternalSession(session, externalUri, isSupportingCdp);
         return Either.right(new CreateSessionResponse(
           externalSession,
           getEncoder(session.getDownstreamDialect()).apply(externalSession)));
@@ -369,6 +415,225 @@ public class SauceNode extends Node {
     return toReturn;
   }
 
+  @Override
+  public HttpResponse uploadFile(HttpRequest req, SessionId id) {
+
+    // When the session is running in a Docker container, the upload file command
+    // needs to be forwarded to the container as well.
+    SessionSlot slot = currentSessions.getIfPresent(id);
+    if (slot != null && slot.getSession() instanceof SauceDockerSession) {
+      return executeWebDriverCommand(req);
+    }
+
+    Map<String, Object> incoming = JSON.toType(string(req), Json.MAP_TYPE);
+
+    File tempDir;
+    try {
+      TemporaryFilesystem tempfs = getTemporaryFilesystem(id);
+      tempDir = tempfs.createTempDir("upload", "file");
+
+      Zip.unzip((String) incoming.get("file"), tempDir);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    // Select the first file
+    File[] allFiles = tempDir.listFiles();
+    if (allFiles == null) {
+      throw new WebDriverException(
+        String.format("Cannot access temporary directory for uploaded files %s", tempDir));
+    }
+    if (allFiles.length != 1) {
+      throw new WebDriverException(
+        String.format("Expected there to be only 1 file. There were: %s", allFiles.length));
+    }
+
+    ImmutableMap<String, Object> result = ImmutableMap.of(
+      "value", allFiles[0].getAbsolutePath());
+
+    return new HttpResponse().setContent(asJson(result));
+  }
+
+  @Override
+  public void stop(SessionId id) throws NoSuchSessionException {
+    Require.nonNull("Session ID", id);
+
+    SessionSlot slot = currentSessions.getIfPresent(id);
+    if (slot == null) {
+      throw new NoSuchSessionException("Cannot find session with id: " + id);
+    }
+
+    currentSessions.invalidate(id);
+    tempFileSystems.invalidate(id);
+  }
+
+  private void stopAllSessions() {
+    if (currentSessions.size() > 0) {
+      LOG.info("Trying to stop all running sessions before shutting down...");
+      currentSessions.invalidateAll();
+    }
+  }
+
+  private Session createExternalSession(ActiveSession other, URI externalUri, boolean isSupportingCdp) {
+    Capabilities toUse = ImmutableCapabilities.copyOf(other.getCapabilities());
+
+    // Rewrite the se:options if necessary to send the cdp url back
+    if (isSupportingCdp) {
+      String cdpPath = String.format("/session/%s/se/cdp", other.getId());
+      toUse = new PersistentCapabilities(toUse).setCapability("se:cdp", rewrite(cdpPath));
+    }
+
+    return new Session(other.getId(), externalUri, other.getStereotype(), toUse, Instant.now());
+  }
+
+  private URI rewrite(String path) {
+    try {
+      String scheme = "https".equals(gridUri.getScheme()) ? "wss" : "ws";
+      return new URI(
+        scheme,
+        gridUri.getUserInfo(),
+        gridUri.getHost(),
+        gridUri.getPort(),
+        path,
+        null,
+        null);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public NodeStatus getStatus() {
+    Set<Slot> slots = factories.stream()
+      .map(slot -> {
+        Optional<Session> session = Optional.empty();
+        if (!slot.isAvailable()) {
+          ActiveSession activeSession = slot.getSession();
+          session = Optional.of(
+            new Session(
+              activeSession.getId(),
+              activeSession.getUri(),
+              slot.getStereotype(),
+              activeSession.getCapabilities(),
+              activeSession.getStartTime()));
+        }
+
+        return new Slot(
+          new SlotId(getId(), slot.getId()),
+          slot.getStereotype(),
+          Instant.EPOCH,
+          session);
+      })
+      .collect(toImmutableSet());
+
+    return new NodeStatus(
+      getId(),
+      externalUri,
+      maxSessionCount,
+      slots,
+      isDraining() ? DRAINING : UP,
+      heartbeatPeriod,
+      getNodeVersion(),
+      getOsInfo());
+  }
+
+  @Override
+  public HealthCheck getHealthCheck() {
+    return healthCheck;
+  }
+
+  @Override
+  public void drain() {
+    bus.fire(new NodeDrainStarted(getId()));
+    draining = true;
+    int currentSessionCount = getCurrentSessionCount();
+    if (currentSessionCount == 0) {
+      LOG.info("Firing node drain complete message");
+      bus.fire(new NodeDrainComplete(getId()));
+    } else {
+      pendingSessions.set(currentSessionCount);
+    }
+  }
+
+  private Map<String, Object> toJson() {
+    return ImmutableMap.of(
+      "id", getId(),
+      "uri", externalUri,
+      "maxSessions", maxSessionCount,
+      "draining", isDraining(),
+      "capabilities", factories.stream()
+        .map(SessionSlot::getStereotype)
+        .collect(Collectors.toSet()));
+  }
+
+  public static class Builder {
+
+    private final Tracer tracer;
+    private final EventBus bus;
+    private final URI uri;
+    private final URI gridUri;
+    private final Secret registrationSecret;
+    private final ImmutableList.Builder<SessionSlot> factories;
+    private int maxCount = Runtime.getRuntime().availableProcessors() * 5;
+    private Ticker ticker = Ticker.systemTicker();
+    private Duration sessionTimeout = Duration.ofMinutes(5);
+    private HealthCheck healthCheck;
+    private Duration heartbeatPeriod = Duration.ofSeconds(NodeOptions.DEFAULT_HEARTBEAT_PERIOD);
+
+    private Builder(
+      Tracer tracer,
+      EventBus bus,
+      URI uri,
+      URI gridUri,
+      Secret registrationSecret) {
+      this.tracer = Require.nonNull("Tracer", tracer);
+      this.bus = Require.nonNull("Event bus", bus);
+      this.uri = Require.nonNull("Remote node URI", uri);
+      this.gridUri = Require.nonNull("Grid URI", gridUri);
+      this.registrationSecret = Require.nonNull("Registration secret", registrationSecret);
+      this.factories = ImmutableList.builder();
+    }
+
+    public SauceNode.Builder add(Capabilities stereotype, SessionFactory factory) {
+      Require.nonNull("Capabilities", stereotype);
+      Require.nonNull("Session factory", factory);
+
+      factories.add(new SessionSlot(bus, stereotype, factory));
+
+      return this;
+    }
+
+    public SauceNode.Builder maximumConcurrentSessions(int maxCount) {
+      this.maxCount = Require.positive("Max session count", maxCount);
+      return this;
+    }
+
+    public SauceNode.Builder sessionTimeout(Duration timeout) {
+      sessionTimeout = timeout;
+      return this;
+    }
+
+    public SauceNode.Builder heartbeatPeriod(Duration heartbeatPeriod) {
+      this.heartbeatPeriod = heartbeatPeriod;
+      return this;
+    }
+
+    public SauceNode build() {
+      return new SauceNode(
+        tracer,
+        bus,
+        uri,
+        gridUri,
+        healthCheck,
+        maxCount,
+        ticker,
+        sessionTimeout,
+        heartbeatPeriod,
+        factories.build(),
+        registrationSecret);
+    }
+
+  }
+
   private Object getRequestContents(HttpRequest httpRequest) {
     String reqContents = string(httpRequest);
     if (reqContents.isEmpty()) {
@@ -445,226 +710,6 @@ public class SauceNode extends Node {
       .entries()
       .stream()
       .anyMatch(pair -> pair.getValue().equals(httpMethod) && requestUri.contains(pair.getKey()));
-  }
-
-  @Override
-  public HttpResponse uploadFile(HttpRequest req, SessionId id) {
-    Map<String, Object> incoming = JSON.toType(string(req), Json.MAP_TYPE);
-
-    File tempDir;
-    try {
-      TemporaryFilesystem tempfs = getTemporaryFilesystem(id);
-      tempDir = tempfs.createTempDir("upload", "file");
-
-      Zip.unzip((String) incoming.get("file"), tempDir);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-    // Select the first file
-    File[] allFiles = tempDir.listFiles();
-    if (allFiles == null) {
-      throw new WebDriverException(
-        String.format("Cannot access temporary directory for uploaded files %s", tempDir));
-    }
-    if (allFiles.length != 1) {
-      throw new WebDriverException(
-        String.format("Expected there to be only 1 file. There were: %s", allFiles.length));
-    }
-
-    ImmutableMap<String, Object> result = ImmutableMap.of(
-      "value", allFiles[0].getAbsolutePath());
-
-    return new HttpResponse().setContent(asJson(result));
-  }
-
-  @Override
-  public void stop(SessionId id) throws NoSuchSessionException {
-    Require.nonNull("Session ID", id);
-
-    SessionSlot slot = currentSessions.getIfPresent(id);
-    if (slot == null) {
-      throw new NoSuchSessionException("Cannot find session with id: " + id);
-    }
-
-    killSession(slot);
-    tempFileSystems.invalidate(id);
-  }
-
-  private Session createExternalSession(ActiveSession other, URI externalUri, boolean isSupportingCdp) {
-    Capabilities toUse = ImmutableCapabilities.copyOf(other.getCapabilities());
-
-    // Rewrite the se:options if necessary to send the cdp url back
-    if (isSupportingCdp) {
-      String cdpPath = String.format("/session/%s/se/cdp", other.getId());
-      toUse = new PersistentCapabilities(toUse).setCapability("se:cdp", rewrite(cdpPath));
-    }
-
-    return new Session(other.getId(), externalUri, other.getStereotype(), toUse, Instant.now());
-  }
-
-  private URI rewrite(String path) {
-    try {
-      return new URI(
-        gridUri.getScheme(),
-        gridUri.getUserInfo(),
-        gridUri.getHost(),
-        gridUri.getPort(),
-        path,
-        null,
-        null);
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void  killSession(SessionSlot slot) {
-    currentSessions.invalidate(slot.getSession().getId());
-    // Attempt to stop the session
-    if (!slot.isAvailable()) {
-      slot.stop();
-    }
-  }
-
-  @Override
-  public NodeStatus getStatus() {
-    Set<Slot> slots = factories.stream()
-      .map(slot -> {
-        Optional<Session> session = Optional.empty();
-        if (!slot.isAvailable()) {
-          ActiveSession activeSession = slot.getSession();
-          session = Optional.of(
-            new Session(
-              activeSession.getId(),
-              activeSession.getUri(),
-              slot.getStereotype(),
-              activeSession.getCapabilities(),
-              activeSession.getStartTime()));
-        }
-
-        return new Slot(
-          new SlotId(getId(), slot.getId()),
-          slot.getStereotype(),
-          Instant.EPOCH,
-          session);
-      })
-      .collect(toImmutableSet());
-
-    return new NodeStatus(
-      getId(),
-      externalUri,
-      maxSessionCount,
-      slots,
-      isDraining() ? DRAINING : UP,
-      heartbeatPeriod,
-      getNodeVersion(),
-      getOsInfo());
-  }
-
-  @Override
-  public HealthCheck getHealthCheck() {
-    return healthCheck;
-  }
-
-  @Override
-  public void drain() {
-    bus.fire(new NodeDrainStarted(getId()));
-    draining = true;
-    int currentSessionCount = getCurrentSessionCount();
-    if (currentSessionCount == 0) {
-      LOG.info("Firing node drain complete message");
-      bus.fire(new NodeDrainComplete(getId()));
-    } else {
-      pendingSessions.set(currentSessionCount);
-    }
-  }
-
-  private Map<String, Object> toJson() {
-    return ImmutableMap.of(
-      "id", getId(),
-      "uri", externalUri,
-      "maxSessions", maxSessionCount,
-      "draining", isDraining(),
-      "capabilities", factories.stream()
-        .map(SessionSlot::getStereotype)
-        .collect(Collectors.toSet()));
-  }
-
-  public static SauceNode.Builder builder(
-    Tracer tracer,
-    EventBus bus,
-    URI uri,
-    URI gridUri,
-    Secret registrationSecret) {
-    return new SauceNode.Builder(tracer, bus, uri, gridUri, registrationSecret);
-  }
-
-  public static class Builder {
-
-    private final Tracer tracer;
-    private final EventBus bus;
-    private final URI uri;
-    private final URI gridUri;
-    private final Secret registrationSecret;
-    private final ImmutableList.Builder<SessionSlot> factories;
-    private int maxCount = Runtime.getRuntime().availableProcessors() * 5;
-    private Ticker ticker = Ticker.systemTicker();
-    private Duration sessionTimeout = Duration.ofMinutes(5);
-    private HealthCheck healthCheck;
-    private Duration heartbeatPeriod = Duration.ofSeconds(NodeOptions.DEFAULT_HEARTBEAT_PERIOD);
-
-    private Builder(
-      Tracer tracer,
-      EventBus bus,
-      URI uri,
-      URI gridUri,
-      Secret registrationSecret) {
-      this.tracer = Require.nonNull("Tracer", tracer);
-      this.bus = Require.nonNull("Event bus", bus);
-      this.uri = Require.nonNull("Remote node URI", uri);
-      this.gridUri = Require.nonNull("Grid URI", gridUri);
-      this.registrationSecret = Require.nonNull("Registration secret", registrationSecret);
-      this.factories = ImmutableList.builder();
-    }
-
-    public SauceNode.Builder add(Capabilities stereotype, SessionFactory factory) {
-      Require.nonNull("Capabilities", stereotype);
-      Require.nonNull("Session factory", factory);
-
-      factories.add(new SessionSlot(bus, stereotype, factory));
-
-      return this;
-    }
-
-    public SauceNode.Builder maximumConcurrentSessions(int maxCount) {
-      this.maxCount = Require.positive("Max session count", maxCount);
-      return this;
-    }
-
-    public SauceNode.Builder sessionTimeout(Duration timeout) {
-      sessionTimeout = timeout;
-      return this;
-    }
-
-    public SauceNode.Builder heartbeatPeriod(Duration heartbeatPeriod) {
-      this.heartbeatPeriod = heartbeatPeriod;
-      return this;
-    }
-
-    public SauceNode build() {
-      return new SauceNode(
-        tracer,
-        bus,
-        uri,
-        gridUri,
-        healthCheck,
-        maxCount,
-        ticker,
-        sessionTimeout,
-        heartbeatPeriod,
-        factories.build(),
-        registrationSecret);
-    }
-
   }
 
 }

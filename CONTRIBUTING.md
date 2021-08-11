@@ -1,6 +1,6 @@
-# Contributing to _Sauce To Go_
+# Contributing to Sauce To Go
 
-**Thank you for your interest in _Sauce To Go_. Your contributions are highly welcome.**
+**Thank you for your interest in Sauce To Go. Your contributions are highly welcome.**
 
 There are multiple ways of getting involved:
 
@@ -68,7 +68,7 @@ mv sauce-assets-uploader/target/sauce-assets-uploader-<POM-VERSION>-jar-with-dep
 cd docker && make all && cd ..
 ```
 
-To double check, you can run `docker images --filter=reference='saucelabs/*:*'` to see the
+To double-check, you can run `docker images --filter=reference='saucelabs/*:*'` to see the
 generated images. To run Sauce To Go, please refer to the instructions described on the 
 [README](./README.md). Be sure to use the same tags you used to generate the Docker images.
 
@@ -105,14 +105,15 @@ If you want to provide a fix along with your bug report: That is great! In this 
 send us a pull request as described in section [Contribute Code](#contribute-code).
 
 ## Suggest a feature
-To request a new feature you should open an [issue](../../issues/new) and summarize the desired 
-functionality and its use case. Set the issue label to "feature".  
+To request a new feature you should open an [issue](https://github.com/saucelabs/sauce-togo/issues) 
+and summarize the desired functionality and its use case. Set the issue label to "feature".  
 
 ## Contribute code
 This is an outline of what the workflow for code contributions looks like
 
-- Check the list of open [issues](../../issues). Either assign an existing issue to yourself, or 
-create a new one if you would like work on and discuss your ideas and use cases. 
+- Check the list of open [issues](https://github.com/saucelabs/sauce-togo/issues). Either assign 
+  an existing issue to yourself, or create a new one if you would like work on and discuss your 
+  ideas and use cases. 
 
 It is always best to discuss your plans beforehand, to ensure that your contribution is in 
 line with our goals.
@@ -142,7 +143,7 @@ All contributions (including pull requests) must agree to the Developer Certific
 (DCO) version 1.1. This is exactly the same one created and used by the Linux kernel developers 
 and posted on http://developercertificate.org/. This is a developer's certification that they have 
 the right to submit the patch for inclusion into the project. Simply submitting a contribution 
-implies this agreement, however, please include a "Signed-off-by" tag in every patch 
+implies this agreement. Please include a "Signed-off-by" tag in every patch 
 (this tag is a conventional way to confirm that you agree to the DCO) - you can automate 
 this with a [Git hook](https://stackoverflow.com/questions/15015894/git-add-signed-off-by-line-using-format-signoff-not-working).
 

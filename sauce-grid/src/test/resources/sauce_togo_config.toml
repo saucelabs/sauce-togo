@@ -2,9 +2,9 @@
 # Configs have a mapping between the Docker image to use and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:88.0", '{"browserName": "firefox", "platformName": "linux"}',
-    "saucelabs/stg-edge:91.0", '{"browserName": "MicrosoftEdge", "platformName": "linux"}',
-    "saucelabs/stg-chrome:90.0", '{"browserName": "chrome", "platformName": "linux"}'
+    "saucelabs/stg-firefox:90.0", '{"browserName": "firefox", "platformName": "linux"}',
+    "saucelabs/stg-edge:93.0", '{"browserName": "MicrosoftEdge", "platformName": "linux"}',
+    "saucelabs/stg-chrome:92.0", '{"browserName": "chrome", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon
@@ -14,9 +14,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker imagee used for video recording
-video-image = "saucelabs/stg-video:ffmpeg-4.3.1-20210513"
+video-image = "saucelabs/stg-video:ffmpeg-4.3.1-20210812"
 # Docker imagee used to upload the generated test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20210515"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20210812"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"

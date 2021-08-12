@@ -45,7 +45,7 @@ public class DemoTest {
       assertEquals("2", driver.findElement(By.className("shopping_cart_badge")).getText());
 
       // Assert we have two items in the shopping cart
-      driver.get("http://www.saucedemo.com/cart.html");
+      driver.get("https://www.saucedemo.com/cart.html");
       assertEquals(2, driver.findElements(By.className("inventory_item_name")).size());
     } finally {
       driver.quit();

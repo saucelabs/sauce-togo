@@ -385,7 +385,6 @@ public class SauceNode extends Node {
     SauceCommandInfo.Builder builder = new SauceCommandInfo.Builder();
     builder.setStartTime(Instant.now().toEpochMilli());
     HttpResponse toReturn = slot.execute(req);
-    builder.setEndTime(Instant.now().toEpochMilli());
 
     if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
       stop(id);
@@ -411,6 +410,7 @@ public class SauceNode extends Node {
         && parsedResponse.get("value").toString().contains("error")) {
       builder.setStatusCode(1);
     }
+    builder.setEndTime(Instant.now().toEpochMilli());
     session.addSauceCommandInfo(builder.build());
     return toReturn;
   }

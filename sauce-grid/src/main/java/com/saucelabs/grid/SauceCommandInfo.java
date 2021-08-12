@@ -56,7 +56,7 @@ public class SauceCommandInfo {
   private Map<String, Object> toJson() {
     double commandDuration = (this.endTime - this.startTime) / 1000.0;
     double betweenCommands = this.betweenCommands / 1000.0;
-    double inVideoTimeline = (this.startTime - this.videoStartTime) / 1000.0;
+    double inVideoTimeline = (this.endTime - this.videoStartTime) / 1000.0;
     return ImmutableMap.<String, Object>builder()
       .put("screenshot", this.screenshotId == -1 ? "null" : this.screenshotId)
       .put("suggestion_values", this.suggestionValues)

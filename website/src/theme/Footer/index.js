@@ -4,32 +4,30 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-import React from 'react';
-import clsx from 'clsx';
-import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import useBaseUrl from '@docusaurus/useBaseUrl';
-import styles from './styles.module.css';
+import React from 'react'
+import Link from '@docusaurus/Link'
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext'
+import useBaseUrl from '@docusaurus/useBaseUrl'
 
-function FooterLink({to, href, label, prependBaseUrlToHref, ...props}) {
-  const toUrl = useBaseUrl(to);
+function FooterLink ({ to, href, label, prependBaseUrlToHref, ...props }) {
+  const toUrl = useBaseUrl(to)
   const normalizedHref = useBaseUrl(href, {
     forcePrependBaseUrl: true,
-  });
+  })
   return (
-      <Link
-          className="footer__link-item"
-          {...(href
-              ? {
-                target: '_blank',
-                rel: 'noopener noreferrer',
-                href: prependBaseUrlToHref ? normalizedHref : href,
-              }
-              : {
-                to: toUrl,
-              })}
-          {...props}>
-        {label}
+    <Link
+      className="footer__link-item"
+      {...(href
+        ? {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          href: prependBaseUrlToHref ? normalizedHref : href,
+        }
+        : {
+          to: toUrl,
+        })}
+      {...props}>
+      {label}
       </Link>
   );
 }
@@ -53,18 +51,24 @@ function Footer() {
   return (
     <div>
       <footer>
-          <div className="footer__image">
-          <img src="../img/logo-saucelabs-inverted.png" />
+        <div className="footer__image">
+          <img src={logoUrl}/>
         </div>
         <div className="footer__inner">
 
           <div className="footer-column">
-          <p className="link-title">Solutions</p>
+            <p className="link-title">Solutions</p>
 
-          <div className="link-list">
+            <div className="link-list">
               <ul>
-                  <li><a className="link" href="https://saucelabs.com/solutions/enterprise" target="" data-ta="click" data-tc="Text" data-tl="">Enterprise</a></li>
-                  <li><a className="link" href="https://saucelabs.com/solutions/startup-medium-teams" target="" data-ta="click" data-tc="Text" data-tl="">Start-ups &amp; SMB Teams</a></li>
+                <li><a className="link"
+                       href="https://saucelabs.com/solutions/enterprise"
+                       target="" data-ta="click" data-tc="Text"
+                       data-tl="">Enterprise</a></li>
+                <li><a className="link"
+                       href="https://saucelabs.com/solutions/startup-medium-teams"
+                       target="" data-ta="click" data-tc="Text"
+                       data-tl="">Start-ups &amp; SMB Teams</a></li>
                   <li><a className="link" href="https://saucelabs.com/solutions/open-source" target="" data-ta="click" data-tc="Text" data-tl="">Open Source</a></li>
                   <li><a className="link" href="https://saucelabs.com/solutions/continuous-testing" target="" data-ta="click" data-tc="Text" data-tl="">Continuous Testing</a></li>
                   <li><a className="link" href="https://saucelabs.com/solutions/automated-testing" target="" data-ta="click" data-tc="Text" data-tl="">Automated Testing</a></li>

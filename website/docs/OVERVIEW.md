@@ -1,8 +1,10 @@
 ---
-id: overview
-title: Overview
-sidebar_label: Overview
+id: overview 
+title: Overview 
+sidebar_label: Overview 
+slug: /
 ---
+
 ## Run tests on your infrastructure and see the results in Sauce Labs
 
 Start a local dynamic Selenium Grid in seconds, run your tests, and visualize your test results
@@ -20,7 +22,7 @@ tests results after logging into your Sauce Labs account.
 [docker-selenium](https://github.com/seleniumhq/docker-selenium/) is useful to get a local Selenium
 Grid that records videos per test working out of the box. However, it is troublesome to manage,
 store and visualize all the generated files when executing tests. Moreover, providing, analytics,
-and integrations based on tests results is a complicated task that needs a expert development team
+and integrations based on tests results is a complicated task that needs an expert development team
 to get it done.
 
 Sauce To Go has 3 main goals:

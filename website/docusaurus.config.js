@@ -40,9 +40,9 @@ module.exports={
       {
         docs: {
           sidebarPath: 'sidebars.json',
-          routeBasePath: 'docs/',
+          routeBasePath: '/',
           editUrl:
-              'https://github.com/saucelabs/sauce-togo/edit/main/website/',
+            'https://github.com/saucelabs/sauce-togo/edit/main/website/',
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
         },

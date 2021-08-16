@@ -1,21 +1,36 @@
-# Sauce To Go
+---
+id: getting-started
+title: Getting Started
+sidebar_label: Getting Started
+---
 
-Run tests on your infrastructure and see the results (video/screenshots/logs) in [Sauce Labs](https://saucelabs.com/).
+## Prerequisites
 
-_You'll need an active Sauce Labs account to use Sauce To Go, if you don't have one yet, please
-[sign-up](https://saucelabs.com/sign-up)._
+Please make sure you have the following:
 
-## How to run Sauce To Go
+- [Docker installed](https://docs.docker.com/engine/install/)
+- `docker run hello-world` runs without any errors
+- An active Sauce Labs account, if you don't have one yet, please [sign-up](https://saucelabs.com/sign-up?utm_source=referral&utm_medium=ospo&utm_campaign=saucetogo&utm_term=)
+- Recommended - Your Sauce Labs `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` as environment variables
 
-### 1. Create a directory on a path Docker can access and copy the following configuration example. 
+```bash
+SAUCE_USERNAME='valid.username'
+SAUCE_ACCESS_KEY='valid.key'
+```
+
+Here are instructions for setting environment variables on each Operating System: 
+* [Windows 10](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/) 
+* [MacOS](https://apple.stackexchange.com/questions/106778/how-do-i-set-environment-variables-on-os-x)
+* [Linux](https://askubuntu.com/questions/58814/how-do-i-add-environment-variables)
+
+## Get Sauce To Go up and running
+
+### 1. Create a directory on a path Docker can access and copy the following configuration example.
 
 <video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/119869247-4ad0f900-bf20-11eb-9ba3-1f593ce5ea4f.mp4" type="video/mp4">
+  <source src="https://user-images.githubusercontent.com/5992658/119869247-4ad0f900-bf20-11eb-9ba3-1f593ce5ea4f.mp4" type="video/mp4"/>
   Your browser does not support the video tag.
 </video> 
-
-https://user-images.githubusercontent.com/5992658/119869247-4ad0f900-bf20-11eb-9ba3-1f593ce5ea4f.mp4
-
 
 Save the file as `config.toml`
 
@@ -26,9 +41,9 @@ Check the comments in the configuration example for specific adjustments on each
 # Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:90.0", '{"browserName": "firefox", "browserVersion": "90.0", "platformName": "linux"}',
-    "saucelabs/stg-edge:93.0", '{"browserName": "MicrosoftEdge", "browserVersion": "93.0", "platformName": "linux"}',
-    "saucelabs/stg-chrome:92.0", '{"browserName": "chrome", "browserVersion": "92.0", "platformName": "linux"}'
+    "saucelabs/stg-firefox:90.0", '{"browserName": "firefox", "browserVersion": "88.0", "platformName": "linux"}',
+    "saucelabs/stg-edge:93.0", '{"browserName": "MicrosoftEdge", "browserVersion": "91.0", "platformName": "linux"}',
+    "saucelabs/stg-chrome:92.0", '{"browserName": "chrome", "browserVersion": "91.0", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon
@@ -46,10 +61,10 @@ assets-uploader-image = "saucelabs/stg-assets-uploader:20210812"
 implementation = "com.saucelabs.grid.SauceNodeFactory"
 ```
 
-**Tip:** To improve loading time, pull the Docker images before moving to step two 
+**Tip:** To improve loading time, pull the Docker images before moving to step two
 (only needed once).
 
-```sh
+```bash
 docker pull saucelabs/stg-firefox:90.0
 docker pull saucelabs/stg-edge:93.0
 docker pull saucelabs/stg-chrome:92.0
@@ -60,19 +75,15 @@ docker pull saucelabs/stg-assets-uploader:20210812
 ### 2. Run Sauce To Go
 
 <video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/119869320-61775000-bf20-11eb-8add-8743bf4f7c64.mp4" type="video/mp4">
+  <source src="https://user-images.githubusercontent.com/5992658/119869320-61775000-bf20-11eb-8add-8743bf4f7c64.mp4" type="video/mp4"/>
   Your browser does not support the video tag.
 </video> 
 
-https://user-images.githubusercontent.com/5992658/119869320-61775000-bf20-11eb-8add-8743bf4f7c64.mp4
-
-
-
 
 You'll need to mount two volumes. The first one is the path where the config file from
-step 1 is, and the second one is the path where the test assets will be temporarily stored. 
+step 1 is, and the second one is the path where the test assets will be temporarily stored.
 
-```sh
+```bash
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v /path/to/your/config.toml:/opt/bin/config.toml \
     -v /path/to/your/assets/directory:/opt/selenium/assets \
@@ -82,18 +93,13 @@ docker run --rm --name sauce-togo -p 4444:4444 \
 ### 3. Run your tests and check them in [Sauce Labs](https://app.saucelabs.com/)
 
 <video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/119869376-7227c600-bf20-11eb-8ed3-8676014c73e9.mp4" type="video/mp4">
+  <source src="https://user-images.githubusercontent.com/5992658/119869376-7227c600-bf20-11eb-8ed3-8676014c73e9.mp4" type="video/mp4"/>
   Your browser does not support the video tag.
 </video> 
 
-
-https://user-images.githubusercontent.com/5992658/119869376-7227c600-bf20-11eb-8ed3-8676014c73e9.mp4
-
-
-
 Point them to either `http://localhost:4444` or to `http://localhost:4444/wd/hub`.
 
-Your test capabilities need to include the `sauce:options` section, here is an example: 
+Your test capabilities need to include the `sauce:options` section, here is an example:
 
 ```java
 import org.junit.jupiter.api.Test;

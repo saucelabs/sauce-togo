@@ -8,4 +8,4 @@ in [Sauce Labs](https://saucelabs.com/).
 # Contributing
 
 Follow our contribution
-instructions [here](https://opensource.saucelabs.com/sauce-togo/docs/contributing).
+instructions [here](https://opensource.saucelabs.com/sauce-togo/contributing).

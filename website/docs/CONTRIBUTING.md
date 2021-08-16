@@ -27,7 +27,7 @@ The project offers a variety of ways to contribute:
 
 A great way to start working with any open source project is through improving documentation. 
 To get started, follow these 
-[instructions](https://github.com/saucelabs/sauce-togo/blob/master/website/README.md).
+[instructions](https://github.com/saucelabs/sauce-togo/blob/main/website/README.md).
 
 ## Building and contributing to the code base:
 
@@ -98,23 +98,23 @@ cd docker && make all && cd ..
 ```
 
 To double-check, you can run `docker images --filter=reference='saucelabs/*:*'` to see the
-generated images. To run Sauce To Go, please refer to the [Overview](/sauce-togo/docs/overview). 
+generated images. To run Sauce To Go, please refer to the [Overview](https://opensource.saucelabs.com/sauce-togo/). 
 Be sure to use the same tags you used to generate the Docker images.
 
-You run some sample [tests](sauce-grid/src/test/java/com/saucelabs/grid/e2e/SampleTests.java) to
-verify your changes.
+You run some sample [tests](https://github.com/saucelabs/sauce-togo/blob/main/sauce-grid/src/test/java/com/saucelabs/grid/e2e/SampleTests.java) 
+to verify your changes.
 
 #### Debugging and running Sauce Grid outside Docker
 
-Please check the comments in the [Main](./sauce-grid/src/main/java/com/saucelabs/grid/Main.java)
+Please check the comments in the [Main](https://github.com/saucelabs/sauce-togo/blob/main/sauce-grid/src/main/java/com/saucelabs/grid/Main.java)
 class.
 
 ### Release Sauce To Go
 
-The [push-images.yml](./.github/workflows/push-images.yml) automates most of the process. Releases
-can only happen from the `main` branch. To trigger a release, add the keyword `[push]` (including
-brackets) to your commit message on the `main` branch. Tagging and pushing the Docker images to
-Docker Hub happens automatically.
+The [push-images.yml](https://github.com/saucelabs/sauce-togo/blob/main/.github/workflows/push-images.yml) 
+automates most of the process. Releases can only happen from the `main` branch. To trigger a 
+release, add the keyword `[push]` (including brackets) to your commit message on the `main` branch. 
+Tagging and pushing the Docker images to Docker Hub happens automatically.
 
 **Note:** When adding the `[push]` keyword to the commit message, make sure to not skip the build
 by having keywords such as [`[skip ci]`](https://github.blog/changelog/2021-02-08-github-actions-skip-pull-request-and-push-workflows-with-skip-ci/)

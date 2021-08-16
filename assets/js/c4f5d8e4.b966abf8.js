@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk=self.webpackChunk||[]).push([[195],{2841:(e,u,t)=>{var l=t(5318).default;Object.defineProperty(u,"__esModule",{value:!0}),u.default=void 0;var a=l(t(8532)),f=l(t(7294));u.default=function(){return f.default.createElement(a.default,null)}}}]);

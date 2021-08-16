@@ -69,7 +69,7 @@ module.exports={
       hideOnScroll: false,
       logo: {
         alt: 'Sauce Labs logo',
-        src: 'img/logo-saucelabs.png',
+        src: '/img/logo-saucelabs.png',
       },
       items: [
         {
@@ -87,7 +87,7 @@ module.exports={
     footer: {
       logo: {
         alt: 'Sauce Logo',
-        src: 'img/logo-saucelabs-inverted.png',
+        src: '/img/logo-saucelabs-inverted.png',
         href: 'https://saucelabs.com',
       },
       style: 'light',

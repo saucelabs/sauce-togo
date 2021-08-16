@@ -25,7 +25,7 @@ $ npm start
 3. Publish your changes to the site
 
 ```sh
-GIT_USER=<Your GitHub username> USE_SSH=true yarn deploy
+GIT_USER=<Your GitHub username> USE_SSH=true npm run deploy
 ```
 
 # Editing Content

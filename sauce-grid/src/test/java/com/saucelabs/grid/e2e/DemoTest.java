@@ -1,5 +1,7 @@
 package com.saucelabs.grid.e2e;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.MutableCapabilities;
@@ -8,8 +10,6 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DemoTest {
   @Test
@@ -26,7 +26,6 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
-    firefoxOptions.setCapability("browserVersion", "88.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();

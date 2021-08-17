@@ -128,7 +128,6 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
-    firefoxOptions.setCapability("browserVersion", "88.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();
@@ -147,7 +146,7 @@ public class DemoTest {
       assertEquals("2", driver.findElement(By.className("shopping_cart_badge")).getText());
 
       // Assert we have two items in the shopping cart
-      driver.get("http://www.saucedemo.com/cart.html");
+      driver.get("https://www.saucedemo.com/cart.html");
       assertEquals(2, driver.findElements(By.className("inventory_item_name")).size());
     } finally {
       driver.quit();

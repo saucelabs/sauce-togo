@@ -1,11 +1,9 @@
 package com.saucelabs.grid.e2e;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -13,7 +11,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.Platform;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxOptions;
@@ -23,9 +20,6 @@ import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.net.URL;
 import java.time.Instant;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -146,48 +140,15 @@ public class SampleTests {
     throws Exception {
     RemoteWebDriver driver = createDriver(getTestName(testInfo), browserName, platformName);
     try {
-      driver.get("https://time.is/");
-      driver.get("https://www.amazon.de/");
-      driver.get("https://www.airbnb.com/");
       driver.get("https://www.saucelabs.com/");
+      // For demo purposes
+      Thread.sleep(5000);
       driver.get("https://opensource.saucelabs.com/");
+      // For demo purposes
+      Thread.sleep(5000);
     } finally {
       driver.quit();
     }
-  }
-
-  @Test
-  public void concurrentSessions() throws Exception {
-    ExecutorService executor =
-      Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
-    CompletableFuture<?>[] futures = new CompletableFuture<?>[10];
-    ChromeOptions options = new ChromeOptions();
-
-    for (int i = 0; i < futures.length; i++) {
-      MutableCapabilities sauceOptions = getSauceOptions("concurrentSessions - " + (i + 1));
-      options.setCapability(SAUCE_OPTIONS_CAPS, sauceOptions);
-      CompletableFuture<Object> future = new CompletableFuture<>();
-      futures[i] = future;
-
-      executor.submit(() -> {
-        try {
-          WebDriver driver = RemoteWebDriver.builder()
-            .oneOf(options)
-            .address(SAUCE_TO_GO_URL)
-            .build();
-
-          driver.get("https://www.saucedemo.com");
-          driver.findElement(By.tagName("body"));
-
-          // And now quit
-          driver.quit();
-          future.complete(true);
-        } catch (Exception e) {
-          future.completeExceptionally(e);
-        }
-      });
-    }
-    CompletableFuture.allOf(futures).get(4, MINUTES);
   }
 
   private String getTestName(TestInfo testInfo) {

@@ -41,9 +41,9 @@ Check the comments in the configuration example for specific adjustments on each
 # Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:90.0", '{"browserName": "firefox", "browserVersion": "88.0", "platformName": "linux"}',
-    "saucelabs/stg-edge:93.0", '{"browserName": "MicrosoftEdge", "browserVersion": "91.0", "platformName": "linux"}',
-    "saucelabs/stg-chrome:92.0", '{"browserName": "chrome", "browserVersion": "91.0", "platformName": "linux"}'
+    "saucelabs/stg-firefox:90.0", '{"browserName": "firefox", "platformName": "linux"}',
+    "saucelabs/stg-edge:93.0", '{"browserName": "MicrosoftEdge", "platformName": "linux"}',
+    "saucelabs/stg-chrome:92.0", '{"browserName": "chrome", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon

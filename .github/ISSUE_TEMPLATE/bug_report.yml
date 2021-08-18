@@ -17,7 +17,6 @@ body:
       placeholder: | 
         Please add as many details as possible to avoid assumptions from our side.
         How do you trigger this bug? Please walk us through it step by step.
-      value: ""
     validations:
       required: true
   - type: textarea

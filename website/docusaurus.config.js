@@ -58,7 +58,7 @@ module.exports={
   plugins: [],
   themeConfig: {
     googleAnalytics: {
-      trackingID: 'UA-6735579-21',
+      trackingID: 'UA-6735579-1',
     },
     hideableSidebar: true,
     prism: {

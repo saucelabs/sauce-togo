@@ -19,3 +19,11 @@ body:
         it and give you feedback as soon as possible.
     validations:
       required: true
+  - type: checkboxes
+    attributes:
+      label: Code of Conduct
+      description: The Code of Conduct helps create a safe space for everyone. We require
+        that everyone agrees to it.
+      options:
+        - label: I agree to follow this project's [Code of Conduct](https://opensource.saucelabs.com/sauce-togo/code-of-conduct)
+          required: true

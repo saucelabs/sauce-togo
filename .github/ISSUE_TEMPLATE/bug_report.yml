@@ -1,0 +1,52 @@
+name: Bug Report
+description: File a bug report
+title: "[🐛 Bug]: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: | 
+        Describe clearly and concisely the bug including instructions showing how 
+        to reproduce it.
+      placeholder: | 
+        Please add as many details as possible to avoid assumptions from our side.
+        How do you trigger this bug? Please walk us through it step by step.
+      value: ""
+    validations:
+      required: true
+  - type: textarea
+    id: repro-command
+    attributes:
+      label: Command to start Sauce To Go
+      description: | 
+        What command do you use to start Sauce To Go?
+      placeholder: | 
+        Please share the script or docker-compose file used.
+        This will be automatically formatted into code, so no need for backticks.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: | 
+        Please copy and paste any relevant log output. This will be 
+        automatically formatted into code, so no need for backticks.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating System
+      description: What operating system are you using to run Sauce To Go?
+      placeholder: Windows 10? macOS BigSur? Ubuntu?
+    validations:
+      required: true

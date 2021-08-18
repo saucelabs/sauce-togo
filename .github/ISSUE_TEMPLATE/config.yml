@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sauce To Go Community Support and Questions
+    url: https://github.com/saucelabs/sauce-togo/discussions
+    about: Please ask and answer questions here.
+  - name: Sauce To Go Documentation
+    url: https://opensource.saucelabs.com/sauce-togo/
+    about: Please check the documentation before filling out an issue.

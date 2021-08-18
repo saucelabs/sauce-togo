@@ -1,4 +1,4 @@
-name: Bug Report
+name: 🐛 Bug Report
 description: File a bug report
 title: "[🐛 Bug]: "
 labels: [bug, triage]
@@ -11,23 +11,22 @@ body:
     id: what-happened
     attributes:
       label: What happened?
-      description: | 
-        Describe clearly and concisely the bug including instructions showing how 
-        to reproduce it.
-      placeholder: | 
-        Please add as many details as possible to avoid assumptions from our side.
-        How do you trigger this bug? Please walk us through it step by step.
+      description: |
+        Describe clearly and concisely the bug including instructions showing how to reproduce it.
+      placeholder: |
+        Please add as many details as possible to avoid assumptions from our side. How do you
+        trigger this bug? Please walk us through it step by step.
     validations:
       required: true
   - type: textarea
     id: repro-command
     attributes:
       label: Command to start Sauce To Go
-      description: | 
+      description: |
         What command do you use to start Sauce To Go?
-      placeholder: | 
-        Please share the script or docker-compose file used.
-        This will be automatically formatted into code, so no need for backticks.
+      placeholder: |
+        Please share the script or docker-compose file used. This will be automatically
+        formatted into code, so no need for backticks.
       render: shell
     validations:
       required: true
@@ -35,9 +34,9 @@ body:
     id: logs
     attributes:
       label: Relevant log output
-      description: | 
-        Please copy and paste any relevant log output. This will be 
-        automatically formatted into code, so no need for backticks.
+      description: |
+        Please copy and paste any relevant log output. This will be automatically formatted
+        into code, so no need for backticks.
       render: shell
     validations:
       required: true

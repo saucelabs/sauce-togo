@@ -62,6 +62,7 @@ import org.openqa.selenium.grid.security.Secret;
 import org.openqa.selenium.internal.Debug;
 import org.openqa.selenium.internal.Either;
 import org.openqa.selenium.internal.Require;
+import org.openqa.selenium.internal.ShutdownHooks;
 import org.openqa.selenium.io.TemporaryFilesystem;
 import org.openqa.selenium.io.Zip;
 import org.openqa.selenium.json.Json;
@@ -113,7 +114,6 @@ public class SauceNode extends Node {
   private final List<SessionSlot> factories;
   private final Cache<SessionId, SessionSlot> currentSessions;
   private final Cache<SessionId, TemporaryFilesystem> tempFileSystems;
-  private final Regularly regularly;
   private final AtomicInteger pendingSessions = new AtomicInteger();
 
   private SauceNode(
@@ -150,7 +150,7 @@ public class SauceNode extends Node {
       .ticker(ticker)
       .removalListener((RemovalListener<SessionId, SessionSlot>) notification -> {
         // Attempt to stop the session
-        LOG.log(Debug.getDebugLogLevel(), "Stopping session %s", notification.getKey().toString());
+        LOG.log(Debug.getDebugLogLevel(), "Stopping session {0}", notification.getKey().toString());
         SessionSlot slot = notification.getValue();
         if (!slot.isAvailable()) {
           slot.stop();
@@ -168,10 +168,13 @@ public class SauceNode extends Node {
       })
       .build();
 
-    this.regularly = new Regularly("Local Node: " + externalUri);
-    regularly.submit(currentSessions::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
-    regularly.submit(tempFileSystems::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
-    regularly.submit(() -> bus.fire(new NodeHeartBeatEvent(getStatus())), heartbeatPeriod, heartbeatPeriod);
+    Regularly sessionCleanup = new Regularly("Session Cleanup Node: " + externalUri);
+    sessionCleanup.submit(currentSessions::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
+    Regularly tmpFileCleanup = new Regularly("TempFile Cleanup Node: " + externalUri);
+    tmpFileCleanup.submit(tempFileSystems::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
+    Regularly regularHeartBeat = new Regularly("Heartbeat Node: " + externalUri);
+    regularHeartBeat.submit(() -> bus.fire(new NodeHeartBeatEvent(getStatus())), heartbeatPeriod,
+                            heartbeatPeriod);
 
     bus.addListener(SessionClosedEvent.listener(id -> {
       // Listen to session terminated events so we know when to fire the NodeDrainComplete event
@@ -184,8 +187,7 @@ public class SauceNode extends Node {
       }
     }));
 
-    // TODO: Add shutdown hook when RC-1 is released
-    // ShutdownHooks.add(new Thread(this::stopAllSessions));
+    ShutdownHooks.add(new Thread(this::stopAllSessions));
     new JMXHelper().register(this);
   }
 
@@ -505,22 +507,25 @@ public class SauceNode extends Node {
   public NodeStatus getStatus() {
     Set<Slot> slots = factories.stream()
       .map(slot -> {
-        Optional<Session> session = Optional.empty();
+        Instant lastStarted = Instant.EPOCH;
+        Session session = null;
         if (!slot.isAvailable()) {
           ActiveSession activeSession = slot.getSession();
-          session = Optional.of(
-            new Session(
+          if (activeSession != null) {
+            lastStarted = activeSession.getStartTime();
+            session = new Session(
               activeSession.getId(),
               activeSession.getUri(),
               slot.getStereotype(),
               activeSession.getCapabilities(),
-              activeSession.getStartTime()));
+              activeSession.getStartTime());
+          }
         }
 
         return new Slot(
           new SlotId(getId(), slot.getId()),
           slot.getStereotype(),
-          Instant.EPOCH,
+          lastStarted,
           session);
       })
       .collect(toImmutableSet());

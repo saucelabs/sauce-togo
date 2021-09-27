@@ -41,9 +41,9 @@ Check the comments in the configuration example for specific adjustments on each
 # Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:90.0", '{"browserName": "firefox", "platformName": "linux"}',
-    "saucelabs/stg-edge:93.0", '{"browserName": "MicrosoftEdge", "platformName": "linux"}',
-    "saucelabs/stg-chrome:92.0", '{"browserName": "chrome", "platformName": "linux"}'
+    "saucelabs/stg-firefox:92.0", '{"browserName": "firefox", "browserVersion": "92.0", "platformName": "linux"}',
+    "saucelabs/stg-edge:94.0", '{"browserName": "MicrosoftEdge", "browserVersion": "94.0", "platformName": "linux"}',
+    "saucelabs/stg-chrome:94.0", '{"browserName": "chrome", "browserVersion": "94.0", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon
@@ -53,9 +53,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
-video-image = "saucelabs/stg-video:20210812"
+video-image = "saucelabs/stg-video:20210927"
 # Docker image used to upload test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20210812"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20210927"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"
@@ -65,11 +65,11 @@ implementation = "com.saucelabs.grid.SauceNodeFactory"
 (only needed once).
 
 ```bash
-docker pull saucelabs/stg-firefox:90.0
-docker pull saucelabs/stg-edge:93.0
-docker pull saucelabs/stg-chrome:92.0
-docker pull saucelabs/stg-video:20210812
-docker pull saucelabs/stg-assets-uploader:20210812
+docker pull saucelabs/stg-firefox:92.0
+docker pull saucelabs/stg-edge:94.0
+docker pull saucelabs/stg-chrome:94.0
+docker pull saucelabs/stg-video:20210927
+docker pull saucelabs/stg-assets-uploader:20210927
 ```
 
 ### 2. Run Sauce To Go
@@ -87,7 +87,7 @@ step 1 is, and the second one is the path where the test assets will be temporar
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v /path/to/your/config.toml:/opt/bin/config.toml \
     -v /path/to/your/assets/directory:/opt/selenium/assets \
-    saucelabs/stg-standalone:20210812
+    saucelabs/stg-standalone:20210927
 ```
 
 ### 3. Run your tests and check them in [Sauce Labs](https://app.saucelabs.com/)
@@ -128,6 +128,7 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
+    firefoxOptions.setCapability("browserVersion", "92.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();

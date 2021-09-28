@@ -5,7 +5,9 @@ in [Sauce Labs](https://saucelabs.com/).
 
 ## Two minute demo video
 
-https://user-images.githubusercontent.com/5992658/134946448-ea9023f7-9233-41a5-9812-f1b8c0636dee.mp4
+https://user-images.githubusercontent.com/5992658/135048022-58e73843-69d7-4f04-8e9e-ae8f6a83c89d.mp4
+
+
 
 
 

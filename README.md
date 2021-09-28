@@ -3,7 +3,7 @@
 Run tests on your infrastructure and see the results (video/screenshots/logs)
 in [Sauce Labs](https://saucelabs.com/).
 
-## Two minute demo video
+## Two-minute demo
 
 https://user-images.githubusercontent.com/5992658/135048022-58e73843-69d7-4f04-8e9e-ae8f6a83c89d.mp4
 

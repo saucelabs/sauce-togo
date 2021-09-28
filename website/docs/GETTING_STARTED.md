@@ -25,12 +25,13 @@ Here are instructions for setting environment variables on each Operating System
 
 ## Get Sauce To Go up and running
 
-### 1. Create a directory on a path Docker can access and copy the following configuration example.
-
-<video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/119869247-4ad0f900-bf20-11eb-9ba3-1f593ce5ea4f.mp4" type="video/mp4"/>
+### Two-minute demo
+<video style={{maxWidth: '100%'}} controls>
+  <source src="https://user-images.githubusercontent.com/5992658/135048022-58e73843-69d7-4f04-8e9e-ae8f6a83c89d.mp4" type="video/mp4"/>
   Your browser does not support the video tag.
 </video> 
+
+### 1. Create a directory and copy the configuration example
 
 Save the file as `config.toml`
 
@@ -61,6 +62,10 @@ assets-uploader-image = "saucelabs/stg-assets-uploader:20210927"
 implementation = "com.saucelabs.grid.SauceNodeFactory"
 ```
 
+_Make sure the directory path can be accessed by Docker._
+
+
+
 **Tip:** To improve loading time, pull the Docker images before moving to step two
 (only needed once).
 
@@ -72,34 +77,28 @@ docker pull saucelabs/stg-video:20210927
 docker pull saucelabs/stg-assets-uploader:20210927
 ```
 
-### 2. Run Sauce To Go
-
-<video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/119869320-61775000-bf20-11eb-8add-8743bf4f7c64.mp4" type="video/mp4"/>
-  Your browser does not support the video tag.
-</video> 
-
+### 2. Start Sauce To Go
 
 You'll need to mount two volumes. The first one is the path where the config file from
 step 1 is, and the second one is the path where the test assets will be temporarily stored.
 
+_Be sure to be in the same directory you created on step 1._
+
 ```bash
 docker run --rm --name sauce-togo -p 4444:4444 \
-    -v /path/to/your/config.toml:/opt/bin/config.toml \
-    -v /path/to/your/assets/directory:/opt/selenium/assets \
+    -v ${PWD}/config.toml:/opt/bin/config.toml \
+    -v ${PWD}/assets/directory:/opt/selenium/assets \
     saucelabs/stg-standalone:20210927
 ```
 
-### 3. Run your tests and check them in [Sauce Labs](https://app.saucelabs.com/)
-
-<video width="800"  height="450" controls>
-  <source src="https://user-images.githubusercontent.com/5992658/119869376-7227c600-bf20-11eb-8ed3-8676014c73e9.mp4" type="video/mp4"/>
-  Your browser does not support the video tag.
-</video> 
+### 3. Run your tests 
 
 Point them to either `http://localhost:4444` or to `http://localhost:4444/wd/hub`.
 
-Your test capabilities need to include the `sauce:options` section, here is an example:
+Your test capabilities need to include the `sauce:options` section, check the example below.
+
+<details>
+    <summary>Click to see the test example</summary>
 
 ```java
 import org.junit.jupiter.api.Test;
@@ -155,4 +154,7 @@ public class DemoTest {
   }
 }
 ```
+</details>
 
+
+### 4. Head to [Sauce Labs](https://app.saucelabs.com/) and check your tests!

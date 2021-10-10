@@ -43,7 +43,7 @@ Check the comments in the configuration example for specific adjustments on each
 # start a container with the given image.
 configs = [
     "saucelabs/stg-firefox:92.0", '{"browserName": "firefox", "browserVersion": "92.0", "platformName": "linux"}',
-    "saucelabs/stg-edge:94.0", '{"browserName": "MicrosoftEdge", "browserVersion": "94.0", "platformName": "linux"}',
+    "saucelabs/stg-edge:94.0", '{"browserName": "MicrosoftEdge", "browserVersion": "95.0", "platformName": "linux"}',
     "saucelabs/stg-chrome:94.0", '{"browserName": "chrome", "browserVersion": "94.0", "platformName": "linux"}'
 ]
 
@@ -54,9 +54,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
-video-image = "saucelabs/stg-video:20210927"
+video-image = "saucelabs/stg-video:20211010"
 # Docker image used to upload test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20210927"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20211010"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"
@@ -71,10 +71,10 @@ _Make sure the directory path can be accessed by Docker._
 
 ```bash
 docker pull saucelabs/stg-firefox:92.0
-docker pull saucelabs/stg-edge:94.0
+docker pull saucelabs/stg-edge:95.0
 docker pull saucelabs/stg-chrome:94.0
-docker pull saucelabs/stg-video:20210927
-docker pull saucelabs/stg-assets-uploader:20210927
+docker pull saucelabs/stg-video:20211010
+docker pull saucelabs/stg-assets-uploader:20211010
 ```
 
 ### 2. Start Sauce To Go
@@ -88,7 +88,7 @@ _Be sure to be in the same directory you created on step 1._
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v ${PWD}/config.toml:/opt/bin/config.toml \
     -v ${PWD}/assets/directory:/opt/selenium/assets \
-    saucelabs/stg-standalone:20210927
+    saucelabs/stg-standalone:20211010
 ```
 
 ### 3. Run your tests 

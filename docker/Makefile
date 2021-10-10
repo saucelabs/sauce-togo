@@ -1,7 +1,7 @@
-SELENIUM_TAG := $(or $(SELENIUM_TAG),$(SELENIUM_TAG),4.0.0-rc-2-prerelease-20210923)
+SELENIUM_TAG := $(or $(SELENIUM_TAG),$(SELENIUM_TAG),4.0.0-rc-2-20210930)
 CURRENT_DATE := $(shell date '+%Y%m%d')
 SAUCE_TAG := $(or $(SAUCE_TAG),$(SAUCE_TAG),$(CURRENT_DATE))
-VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20210923)
+VIDEO_TAG := $(or $(VIDEO_TAG),$(VIDEO_TAG),ffmpeg-4.3.1-20210930)
 
 all: stg_video \
 	stg_video_latest \

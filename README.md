@@ -11,7 +11,7 @@ https://user-images.githubusercontent.com/5992658/135048022-58e73843-69d7-4f04-8
 
 
 
-***Interesed? [Learn More Here](https://opensource.saucelabs.com/sauce-togo/)***
+***Interested? [Learn More Here](https://opensource.saucelabs.com/sauce-togo/)***
 
 # Contributing
 

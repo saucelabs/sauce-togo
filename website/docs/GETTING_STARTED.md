@@ -42,8 +42,8 @@ Check the comments in the configuration example for specific adjustments on each
 # Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:92.0", '{"browserName": "firefox", "browserVersion": "92.0", "platformName": "linux"}',
-    "saucelabs/stg-edge:94.0", '{"browserName": "MicrosoftEdge", "browserVersion": "95.0", "platformName": "linux"}',
+    "saucelabs/stg-firefox:93.0", '{"browserName": "firefox", "browserVersion": "93.0", "platformName": "linux"}',
+    "saucelabs/stg-edge:95.0", '{"browserName": "MicrosoftEdge", "browserVersion": "95.0", "platformName": "linux"}',
     "saucelabs/stg-chrome:94.0", '{"browserName": "chrome", "browserVersion": "94.0", "platformName": "linux"}'
 ]
 
@@ -54,9 +54,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
-video-image = "saucelabs/stg-video:20211010"
+video-image = "saucelabs/stg-video:20211011"
 # Docker image used to upload test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20211010"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20211011"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"
@@ -70,11 +70,11 @@ _Make sure the directory path can be accessed by Docker._
 (only needed once).
 
 ```bash
-docker pull saucelabs/stg-firefox:92.0
+docker pull saucelabs/stg-firefox:93.0
 docker pull saucelabs/stg-edge:95.0
 docker pull saucelabs/stg-chrome:94.0
-docker pull saucelabs/stg-video:20211010
-docker pull saucelabs/stg-assets-uploader:20211010
+docker pull saucelabs/stg-video:20211011
+docker pull saucelabs/stg-assets-uploader:20211011
 ```
 
 ### 2. Start Sauce To Go
@@ -88,7 +88,7 @@ _Be sure to be in the same directory you created on step 1._
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v ${PWD}/config.toml:/opt/bin/config.toml \
     -v ${PWD}/assets/directory:/opt/selenium/assets \
-    saucelabs/stg-standalone:20211010
+    saucelabs/stg-standalone:20211011
 ```
 
 ### 3. Run your tests 
@@ -127,7 +127,7 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
-    firefoxOptions.setCapability("browserVersion", "92.0");
+    firefoxOptions.setCapability("browserVersion", "93.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();

@@ -14,9 +14,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker imagee used for video recording
-video-image = "saucelabs/stg-video:20211011"
+video-image = "saucelabs/stg-video:20211014"
 # Docker imagee used to upload the generated test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20211011"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20211014"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"

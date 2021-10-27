@@ -293,11 +293,10 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
   private Container createBrowserContainer(int port, Capabilities sessionCapabilities) {
     Map<String, String> browserContainerEnvVars = getBrowserContainerEnvVars(sessionCapabilities);
-    // TODO: Use `shmSize` when rc-1 is released
-    Map<String, String> devShmMount = Collections.singletonMap("/dev/shm", "/dev/shm");
+    long browserContainerShmMemorySize = 2147483648L; //2GB
     ContainerConfig containerConfig = image(browserImage)
       .env(browserContainerEnvVars)
-      .bind(devShmMount)
+      .shmMemorySize(browserContainerShmMemorySize)
       .network(networkName);
     if (!runningInDocker) {
       containerConfig = containerConfig.map(Port.tcp(4444), Port.tcp(port));

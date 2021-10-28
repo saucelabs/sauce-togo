@@ -383,7 +383,15 @@ public class SauceNode extends Node {
       throw new NoSuchSessionException("Cannot find session with id: " + id);
     }
 
-    SauceDockerSession session = (SauceDockerSession) slot.getSession();
+    ActiveSession activeSession = slot.getSession();
+    if (activeSession.getClass().getName().contains("RelaySessionFactory")) {
+      HttpResponse toReturn = slot.execute(req);
+      if (req.getMethod() == DELETE && req.getUri().equals("/session/" + id)) {
+        stop(id);
+      }
+      return toReturn;
+    }
+    SauceDockerSession session = (SauceDockerSession) activeSession;
     SauceCommandInfo.Builder builder = new SauceCommandInfo.Builder();
     builder.setStartTime(Instant.now().toEpochMilli());
     HttpResponse toReturn = slot.execute(req);

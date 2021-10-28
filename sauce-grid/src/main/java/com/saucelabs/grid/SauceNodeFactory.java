@@ -4,6 +4,7 @@ import org.openqa.selenium.grid.config.Config;
 import org.openqa.selenium.grid.log.LoggingOptions;
 import org.openqa.selenium.grid.node.Node;
 import org.openqa.selenium.grid.node.config.NodeOptions;
+import org.openqa.selenium.grid.node.relay.RelayOptions;
 import org.openqa.selenium.grid.security.SecretOptions;
 import org.openqa.selenium.grid.server.BaseServerOptions;
 import org.openqa.selenium.grid.server.EventBusOptions;
@@ -40,6 +41,10 @@ public class SauceNodeFactory {
     sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory)
       .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));
 
+    if (config.getAll("relay", "configs").isPresent()) {
+      new RelayOptions(config).getSessionFactories(tracer, clientFactory)
+        .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));
+    }
 
     return builder.build();
   }

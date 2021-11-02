@@ -54,9 +54,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
-video-image = "saucelabs/stg-video:20211028"
+video-image = "saucelabs/stg-video:20211102"
 # Docker image used to upload test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20211028"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20211102"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"
@@ -70,11 +70,11 @@ _Make sure the directory path can be accessed by Docker._
 (only needed once).
 
 ```bash
-docker pull saucelabs/stg-firefox:93.0
+docker pull saucelabs/stg-firefox:94.0
 docker pull saucelabs/stg-edge:95.0
 docker pull saucelabs/stg-chrome:95.0
-docker pull saucelabs/stg-video:20211028
-docker pull saucelabs/stg-assets-uploader:20211028
+docker pull saucelabs/stg-video:20211102
+docker pull saucelabs/stg-assets-uploader:20211102
 ```
 
 ### 2. Start Sauce To Go
@@ -88,7 +88,7 @@ _Be sure to be in the same directory you created on step 1._
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v ${PWD}/config.toml:/opt/bin/config.toml \
     -v ${PWD}/assets/directory:/opt/selenium/assets \
-    saucelabs/stg-standalone:20211028
+    saucelabs/stg-standalone:20211102
 ```
 
 ### 3. Run your tests 

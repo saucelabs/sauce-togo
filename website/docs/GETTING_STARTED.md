@@ -18,8 +18,8 @@ SAUCE_USERNAME='valid.username'
 SAUCE_ACCESS_KEY='valid.key'
 ```
 
-Here are instructions for setting environment variables on each Operating System: 
-* [Windows 10](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/) 
+Here are instructions for setting environment variables on each Operating System:
+* [Windows 10](https://www.architectryan.com/2018/08/31/how-to-change-environment-variables-on-windows-10/)
 * [MacOS](https://apple.stackexchange.com/questions/106778/how-do-i-set-environment-variables-on-os-x)
 * [Linux](https://askubuntu.com/questions/58814/how-do-i-add-environment-variables)
 
@@ -29,7 +29,7 @@ Here are instructions for setting environment variables on each Operating System
 <video style={{maxWidth: '100%'}} controls>
   <source src="https://user-images.githubusercontent.com/5992658/135048022-58e73843-69d7-4f04-8e9e-ae8f6a83c89d.mp4" type="video/mp4"/>
   Your browser does not support the video tag.
-</video> 
+</video>
 
 ### 1. Create a directory and copy the configuration example
 
@@ -42,21 +42,21 @@ Check the comments in the configuration example for specific adjustments on each
 # Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:95.0", '{"browserName": "firefox", "browserVersion": "95.0", "platformName": "linux"}',
-    "saucelabs/stg-edge:96.0", '{"browserName": "MicrosoftEdge", "browserVersion": "96.0", "platformName": "linux"}',
-    "saucelabs/stg-chrome:96.0", '{"browserName": "chrome", "browserVersion": "96.0", "platformName": "linux"}'
+    "saucelabs/stg-firefox:96.0", '{"browserName": "firefox", "browserVersion": "95.0", "platformName": "linux"}',
+    "saucelabs/stg-edge:97.0", '{"browserName": "MicrosoftEdge", "browserVersion": "96.0", "platformName": "linux"}',
+    "saucelabs/stg-chrome:97.0", '{"browserName": "chrome", "browserVersion": "96.0", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon
-# Linux: 172.17.0.1 (make sure the Docker deamon is listening to this url first) 
+# Linux: 172.17.0.1 (make sure the Docker deamon is listening to this url first)
 # Docker Desktop on macOS and Windows: host.docker.internal
 # To have Docker listening through tcp on macOS, install socat and run the following command
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
-video-image = "saucelabs/stg-video:20211218"
+video-image = "saucelabs/stg-video:20220131"
 # Docker image used to upload test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20211218"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20220131"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"
@@ -70,11 +70,11 @@ _Make sure the directory path can be accessed by Docker._
 (only needed once).
 
 ```bash
-docker pull saucelabs/stg-firefox:95.0
-docker pull saucelabs/stg-edge:96.0
-docker pull saucelabs/stg-chrome:96.0
-docker pull saucelabs/stg-video:20211218
-docker pull saucelabs/stg-assets-uploader:20211218
+docker pull saucelabs/stg-firefox:96.0
+docker pull saucelabs/stg-edge:97.0
+docker pull saucelabs/stg-chrome:97.0
+docker pull saucelabs/stg-video:20220131
+docker pull saucelabs/stg-assets-uploader:20220131
 ```
 
 ### 2. Start Sauce To Go
@@ -88,10 +88,10 @@ _Be sure to be in the same directory you created on step 1._
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v ${PWD}/config.toml:/opt/bin/config.toml \
     -v ${PWD}/assets/directory:/opt/selenium/assets \
-    saucelabs/stg-standalone:20211218
+    saucelabs/stg-standalone:20220131
 ```
 
-### 3. Run your tests 
+### 3. Run your tests
 
 Point them to either `http://localhost:4444` or to `http://localhost:4444/wd/hub`.
 
@@ -127,7 +127,7 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
-    firefoxOptions.setCapability("browserVersion", "95.0");
+    firefoxOptions.setCapability("browserVersion", "96.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();

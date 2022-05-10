@@ -26,6 +26,7 @@ import org.openqa.selenium.remote.tracing.Tracer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -99,9 +100,11 @@ public class SauceDockerOptions {
 
   public Map<Capabilities, Collection<SessionFactory>> getDockerSessionFactories(
     Tracer tracer,
-    HttpClient.Factory clientFactory) {
+    HttpClient.Factory clientFactory,
+    Duration sessionTimeout) {
 
-    HttpClient client = clientFactory.createClient(ClientConfig.defaultConfig().baseUri(getDockerUri()));
+    HttpClient client = clientFactory.createClient(
+      ClientConfig.defaultConfig().baseUri(getDockerUri()));
     Docker docker = new Docker(client);
 
     if (!isEnabled(docker)) {
@@ -148,6 +151,7 @@ public class SauceDockerOptions {
           new SauceDockerSessionFactory(
             tracer,
             clientFactory,
+            sessionTimeout,
             docker,
             getDockerUri(),
             image,

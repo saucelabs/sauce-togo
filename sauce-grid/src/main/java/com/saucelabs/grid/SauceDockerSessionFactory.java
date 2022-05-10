@@ -42,6 +42,7 @@ import org.openqa.selenium.remote.DriverCommand;
 import org.openqa.selenium.remote.ProtocolHandshake;
 import org.openqa.selenium.remote.Response;
 import org.openqa.selenium.remote.SessionId;
+import org.openqa.selenium.remote.http.ClientConfig;
 import org.openqa.selenium.remote.http.HttpClient;
 import org.openqa.selenium.remote.http.HttpRequest;
 import org.openqa.selenium.remote.http.HttpResponse;
@@ -89,10 +90,12 @@ public class SauceDockerSessionFactory implements SessionFactory {
   private final String networkName;
   private final boolean runningInDocker;
   private final SlotMatcher slotMatcher;
+  private final Duration sessionTimeout;
 
   public SauceDockerSessionFactory(
     Tracer tracer,
     HttpClient.Factory clientFactory,
+    Duration sessionTimeout,
     Docker docker,
     URI dockerUri,
     Image browserImage,
@@ -104,6 +107,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     boolean runningInDocker) {
     this.tracer = Require.nonNull("Tracer", tracer);
     this.clientFactory = Require.nonNull("HTTP client", clientFactory);
+    this.sessionTimeout = Require.nonNull("Session timeout", sessionTimeout);
     this.docker = Require.nonNull("Docker command", docker);
     this.dockerUri = Require.nonNull("Docker URI", dockerUri);
     this.browserImage = Require.nonNull("Docker browser image", browserImage);
@@ -162,7 +166,11 @@ public class SauceDockerSessionFactory implements SessionFactory {
 
       String containerIp = containerInfo.getIp();
       URL remoteAddress = getUrl(port, containerIp);
-      HttpClient client = clientFactory.createClient(remoteAddress);
+      ClientConfig clientConfig = ClientConfig
+        .defaultConfig()
+        .baseUrl(remoteAddress)
+        .readTimeout(sessionTimeout);
+      HttpClient client = clientFactory.createClient(clientConfig);
 
       attributeMap.put("docker.browser.image", EventAttribute.setValue(browserImage.toString()));
       attributeMap.put("container.port", EventAttribute.setValue(port));

@@ -12,6 +12,8 @@ import org.openqa.selenium.grid.server.NetworkOptions;
 import org.openqa.selenium.remote.http.HttpClient;
 import org.openqa.selenium.remote.tracing.Tracer;
 
+import java.time.Duration;
+
 @SuppressWarnings("unused")
 public class SauceNodeFactory {
 
@@ -27,6 +29,7 @@ public class SauceNodeFactory {
     HttpClient.Factory clientFactory = networkOptions.getHttpClientFactory(tracer);
 
     SauceDockerOptions sauceDockerOptions = new SauceDockerOptions(config);
+    Duration sessionTimeout = nodeOptions.getSessionTimeout();
 
     SauceNode.Builder builder = SauceNode.builder(
       tracer,
@@ -35,14 +38,14 @@ public class SauceNodeFactory {
       nodeOptions.getPublicGridUri().orElseGet(serverOptions::getExternalUri),
       secretOptions.getRegistrationSecret())
       .maximumConcurrentSessions(nodeOptions.getMaxSessions())
-      .sessionTimeout(nodeOptions.getSessionTimeout())
+      .sessionTimeout(sessionTimeout)
       .heartbeatPeriod(nodeOptions.getHeartbeatPeriod());
 
-    sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory)
+    sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory, sessionTimeout)
       .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));
 
     if (config.getAll("relay", "configs").isPresent()) {
-      new RelayOptions(config).getSessionFactories(tracer, clientFactory)
+      new RelayOptions(config).getSessionFactories(tracer, clientFactory, sessionTimeout)
         .forEach((caps, factories) -> factories.forEach(factory -> builder.add(caps, factory)));
     }
 

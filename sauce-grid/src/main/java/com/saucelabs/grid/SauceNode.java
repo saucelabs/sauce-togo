@@ -4,6 +4,7 @@ import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static com.saucelabs.grid.Common.JSON;
 import static java.util.Optional.ofNullable;
 import static org.openqa.selenium.OutputType.FILE;
+import static org.openqa.selenium.grid.data.Availability.DOWN;
 import static org.openqa.selenium.grid.data.Availability.DRAINING;
 import static org.openqa.selenium.grid.data.Availability.UP;
 import static org.openqa.selenium.grid.node.CapabilityResponseEncoder.getEncoder;
@@ -33,7 +34,7 @@ import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.PersistentCapabilities;
 import org.openqa.selenium.RetrySessionRequestException;
 import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.concurrent.Regularly;
+import org.openqa.selenium.concurrent.GuardedRunnable;
 import org.openqa.selenium.events.EventBus;
 import org.openqa.selenium.grid.data.Availability;
 import org.openqa.selenium.grid.data.CreateSessionRequest;
@@ -95,6 +96,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -139,20 +143,27 @@ public class SauceNode extends Node {
     Require.nonNull("Registration secret", registrationSecret);
 
     this.healthCheck = healthCheck == null ?
-                       () -> new HealthCheck.Result(
-                         isDraining() ? DRAINING : UP,
-                         String.format("%s is %s", uri, isDraining() ? "draining" : "up")) :
-                       healthCheck;
+                       () -> {
+                         NodeStatus status = getStatus();
+                         return new HealthCheck.Result(
+                           status.getAvailability(),
+                           String.format("%s is %s", uri, status.getAvailability()));
+                       } : healthCheck;
 
     this.currentSessions = CacheBuilder.newBuilder()
       .expireAfterAccess(sessionTimeout)
       .ticker(ticker)
       .removalListener((RemovalListener<SessionId, SessionSlot>) notification -> {
-        // Attempt to stop the session
-        LOG.log(Debug.getDebugLogLevel(), "Stopping session {0}", notification.getKey().toString());
-        SessionSlot slot = notification.getValue();
-        if (!slot.isAvailable()) {
-          slot.stop();
+        if (notification.getKey() != null && notification.getValue() != null) {
+          // Attempt to stop the session
+          LOG.log(Debug.getDebugLogLevel(), "Stopping session {0}",
+                  notification.getKey().toString());
+          SessionSlot slot = notification.getValue();
+          if (!slot.isAvailable()) {
+            slot.stop();
+          }
+        } else {
+          LOG.log(Debug.getDebugLogLevel(), "Received stop session notification with null values");
         }
       })
       .build();
@@ -167,16 +178,44 @@ public class SauceNode extends Node {
       })
       .build();
 
-    Regularly sessionCleanup = new Regularly("Session Cleanup Node: " + externalUri);
-    sessionCleanup.submit(currentSessions::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
-    Regularly tmpFileCleanup = new Regularly("TempFile Cleanup Node: " + externalUri);
-    tmpFileCleanup.submit(tempFileSystems::cleanUp, Duration.ofSeconds(30), Duration.ofSeconds(30));
-    Regularly regularHeartBeat = new Regularly("Heartbeat Node: " + externalUri);
-    regularHeartBeat.submit(() -> bus.fire(new NodeHeartBeatEvent(getStatus())), heartbeatPeriod,
-                            heartbeatPeriod);
+    ScheduledExecutorService sessionCleanupNodeService =
+      Executors.newSingleThreadScheduledExecutor(
+        r -> {
+          Thread thread = new Thread(r);
+          thread.setDaemon(true);
+          thread.setName("Local Node - Session Cleanup " + externalUri);
+          return thread;
+        });
+    sessionCleanupNodeService.scheduleAtFixedRate(
+      GuardedRunnable.guard(currentSessions::cleanUp), 30, 30, TimeUnit.SECONDS);
+
+    ScheduledExecutorService tempFileCleanupNodeService =
+      Executors.newSingleThreadScheduledExecutor(
+        r -> {
+          Thread thread = new Thread(r);
+          thread.setDaemon(true);
+          thread.setName("TempFile Cleanup Node " + externalUri);
+          return thread;
+        });
+    tempFileCleanupNodeService.scheduleAtFixedRate(
+      GuardedRunnable.guard(tempFileSystems::cleanUp), 30, 30, TimeUnit.SECONDS);
+
+    ScheduledExecutorService heartbeatNodeService =
+      Executors.newSingleThreadScheduledExecutor(
+        r -> {
+          Thread thread = new Thread(r);
+          thread.setDaemon(true);
+          thread.setName("TempFile Cleanup Node " + externalUri);
+          return thread;
+        });
+    heartbeatNodeService.scheduleAtFixedRate(
+      GuardedRunnable.guard(() -> bus.fire(new NodeHeartBeatEvent(getStatus()))),
+      heartbeatPeriod.getSeconds(),
+      heartbeatPeriod.getSeconds(),
+      TimeUnit.SECONDS);
 
     bus.addListener(SessionClosedEvent.listener(id -> {
-      // Listen to session terminated events so we know when to fire the NodeDrainComplete event
+      // Listen to session terminated events, so we know when to fire the NodeDrainComplete event
       if (this.isDraining()) {
         int done = pendingSessions.decrementAndGet();
         if (done <= 0) {
@@ -537,12 +576,22 @@ public class SauceNode extends Node {
       })
       .collect(toImmutableSet());
 
+    Availability availability = isDraining() ? DRAINING : UP;
+
+    // Check status in case this Node is a RelayNode
+    Optional<SessionSlot> relaySlot = factories.stream()
+      .filter(SessionSlot::hasRelayFactory)
+      .findFirst();
+    if (relaySlot.isPresent() && !relaySlot.get().isRelayServiceUp()) {
+      availability = DOWN;
+    }
+
     return new NodeStatus(
       getId(),
       externalUri,
       maxSessionCount,
       slots,
-      isDraining() ? DRAINING : UP,
+      availability,
       heartbeatPeriod,
       getNodeVersion(),
       getOsInfo());

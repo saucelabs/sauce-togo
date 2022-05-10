@@ -28,6 +28,8 @@ import org.openqa.selenium.docker.Docker;
 import org.openqa.selenium.docker.Image;
 import org.openqa.selenium.docker.Port;
 import org.openqa.selenium.grid.data.CreateSessionRequest;
+import org.openqa.selenium.grid.data.DefaultSlotMatcher;
+import org.openqa.selenium.grid.data.SlotMatcher;
 import org.openqa.selenium.grid.node.ActiveSession;
 import org.openqa.selenium.grid.node.SessionFactory;
 import org.openqa.selenium.grid.node.docker.DockerAssetsPath;
@@ -66,7 +68,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.TreeMap;
@@ -87,6 +88,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
   private final DockerAssetsPath assetsPath;
   private final String networkName;
   private final boolean runningInDocker;
+  private final SlotMatcher slotMatcher;
 
   public SauceDockerSessionFactory(
     Tracer tracer,
@@ -111,16 +113,12 @@ public class SauceDockerSessionFactory implements SessionFactory {
     this.assetsUploaderImage = assetsUploaderImage;
     this.assetsPath = assetsPath;
     this.runningInDocker = runningInDocker;
+    this.slotMatcher = new DefaultSlotMatcher();
   }
 
   @Override
   public boolean test(Capabilities capabilities) {
-    return stereotype.getCapabilityNames().stream()
-      .map(
-        name ->
-          Objects.equals(stereotype.getCapability(name), capabilities.getCapability(name)))
-      .reduce(Boolean::logicalAnd)
-      .orElse(false);
+    return slotMatcher.matches(stereotype, capabilities);
   }
 
   @Override

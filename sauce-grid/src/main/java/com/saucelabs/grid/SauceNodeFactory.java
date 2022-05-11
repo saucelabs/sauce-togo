@@ -39,6 +39,7 @@ public class SauceNodeFactory {
       secretOptions.getRegistrationSecret())
       .maximumConcurrentSessions(nodeOptions.getMaxSessions())
       .sessionTimeout(sessionTimeout)
+      .drainAfterSessionCount(nodeOptions.getDrainAfterSessionCount())
       .heartbeatPeriod(nodeOptions.getHeartbeatPeriod());
 
     sauceDockerOptions.getDockerSessionFactories(tracer, clientFactory, sessionTimeout)

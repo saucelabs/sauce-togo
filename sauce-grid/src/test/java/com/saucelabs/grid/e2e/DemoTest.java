@@ -15,7 +15,7 @@ public class DemoTest {
   @Test
   public void demoTest() throws MalformedURLException {
     MutableCapabilities sauceOptions = new MutableCapabilities();
-    // Depending where your Sauce Labs account is created, use 'EU' or 'US'
+    // Depending on where your Sauce Labs account is created, use 'EU' or 'US'
     sauceOptions.setCapability("dataCenter", "US");
     sauceOptions.setCapability("timeZone", "US/Pacific");
     sauceOptions.setCapability("screenResolution", "1920x1080");
@@ -26,7 +26,7 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
-    firefoxOptions.setCapability("browserVersion", "92.0");
+    firefoxOptions.setCapability("browserVersion", "99.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();

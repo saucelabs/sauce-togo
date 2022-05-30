@@ -24,6 +24,7 @@ import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.docker.Container;
 import org.openqa.selenium.docker.ContainerConfig;
 import org.openqa.selenium.docker.ContainerInfo;
+import org.openqa.selenium.docker.Device;
 import org.openqa.selenium.docker.Docker;
 import org.openqa.selenium.docker.Image;
 import org.openqa.selenium.docker.Port;
@@ -68,6 +69,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
@@ -84,6 +86,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
   private final URI dockerUri;
   private final Image browserImage;
   private final Capabilities stereotype;
+  private final List<Device> devices;
   private final Image videoImage;
   private final Image assetsUploaderImage;
   private final DockerAssetsPath assetsPath;
@@ -100,6 +103,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     URI dockerUri,
     Image browserImage,
     Capabilities stereotype,
+    List<Device> devices,
     Image videoImage,
     Image assetsUploaderImage,
     DockerAssetsPath assetsPath,
@@ -113,6 +117,7 @@ public class SauceDockerSessionFactory implements SessionFactory {
     this.browserImage = Require.nonNull("Docker browser image", browserImage);
     this.networkName = Require.nonNull("Docker network name", networkName);
     this.stereotype = copyOf(Require.nonNull("Stereotype", stereotype));
+    this.devices = Require.nonNull("Container devices", devices);
     this.videoImage = videoImage;
     this.assetsUploaderImage = assetsUploaderImage;
     this.assetsPath = assetsPath;
@@ -303,7 +308,8 @@ public class SauceDockerSessionFactory implements SessionFactory {
     ContainerConfig containerConfig = image(browserImage)
       .env(browserContainerEnvVars)
       .shmMemorySize(browserContainerShmMemorySize)
-      .network(networkName);
+      .network(networkName)
+      .devices(devices);
     if (!runningInDocker) {
       containerConfig = containerConfig.map(Port.tcp(4444), Port.tcp(port));
     }

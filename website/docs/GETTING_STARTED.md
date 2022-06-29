@@ -42,9 +42,9 @@ Check the comments in the configuration example for specific adjustments on each
 # Configs have a mapping between a Docker image and the capabilities that need to be matched to
 # start a container with the given image.
 configs = [
-    "saucelabs/stg-firefox:101.0", '{"browserName": "firefox", "browserVersion": "101.0", "platformName": "linux"}',
-    "saucelabs/stg-edge:102.0", '{"browserName": "MicrosoftEdge", "browserVersion": "102.0", "platformName": "linux"}',
-    "saucelabs/stg-chrome:102.0", '{"browserName": "chrome", "browserVersion": "102.0", "platformName": "linux"}'
+    "saucelabs/stg-firefox:102.0", '{"browserName": "firefox", "browserVersion": "102.0", "platformName": "linux"}',
+    "saucelabs/stg-edge:103.0", '{"browserName": "MicrosoftEdge", "browserVersion": "103.0", "platformName": "linux"}',
+    "saucelabs/stg-chrome:103.0", '{"browserName": "chrome", "browserVersion": "103.0", "platformName": "linux"}'
 ]
 
 # URL for connecting to the docker daemon
@@ -54,9 +54,9 @@ configs = [
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
-video-image = "saucelabs/stg-video:20220609"
+video-image = "saucelabs/stg-video:20220629"
 # Docker image used to upload test assets
-assets-uploader-image = "saucelabs/stg-assets-uploader:20220609"
+assets-uploader-image = "saucelabs/stg-assets-uploader:20220629"
 
 [node]
 implementation = "com.saucelabs.grid.SauceNodeFactory"
@@ -70,11 +70,11 @@ _Make sure the directory path can be accessed by Docker._
 (only needed once).
 
 ```bash
-docker pull saucelabs/stg-firefox:101.0
-docker pull saucelabs/stg-edge:102.0
-docker pull saucelabs/stg-chrome:102.0
-docker pull saucelabs/stg-video:20220609
-docker pull saucelabs/stg-assets-uploader:20220609
+docker pull saucelabs/stg-firefox:102.0
+docker pull saucelabs/stg-edge:103.0
+docker pull saucelabs/stg-chrome:103.0
+docker pull saucelabs/stg-video:20220629
+docker pull saucelabs/stg-assets-uploader:20220629
 ```
 
 ### 2. Start Sauce To Go
@@ -88,7 +88,7 @@ _Be sure to be in the same directory you created on step 1._
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v ${PWD}/config.toml:/opt/bin/config.toml \
     -v ${PWD}/assets/directory:/opt/selenium/assets \
-    saucelabs/stg-standalone:20220609
+    saucelabs/stg-standalone:20220629
 ```
 
 ### 3. Run your tests
@@ -127,7 +127,7 @@ public class DemoTest {
     URL gridUrl = new URL("http://localhost:4444");
     FirefoxOptions firefoxOptions = new FirefoxOptions();
     firefoxOptions.setCapability("platformName", "linux");
-    firefoxOptions.setCapability("browserVersion", "101.0");
+    firefoxOptions.setCapability("browserVersion", "102.0");
     firefoxOptions.setCapability("sauce:options", sauceOptions);
     RemoteWebDriver driver = new RemoteWebDriver(gridUrl, firefoxOptions);
     driver.manage().window().maximize();

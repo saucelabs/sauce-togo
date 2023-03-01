@@ -50,7 +50,7 @@ configs = [
 # URL for connecting to the docker daemon
 # Linux: 172.17.0.1 (make sure the Docker deamon is listening to this url first)
 # Docker Desktop on macOS and Windows: host.docker.internal
-# To have Docker listening through tcp on macOS, install socat and run the following command
+# To have Docker listening through tcp on macOS or Linux, install socat and run the following command
 # socat -4 TCP-LISTEN:2375,fork UNIX-CONNECT:/var/run/docker.sock
 url = "http://host.docker.internal:2375"
 # Docker image used for video recording
@@ -81,13 +81,15 @@ docker pull saucelabs/stg-assets-uploader:20220629
 
 You'll need to mount two volumes. The first one is the path where the config file from
 step 1 is, and the second one is the path where the test assets will be temporarily stored.
+In Linux, you might need to change the permissions of the assets folder using the command
+`sudo chown 1200:1201 assets`.
 
 _Be sure to be in the same directory you created on step 1._
 
 ```bash
 docker run --rm --name sauce-togo -p 4444:4444 \
     -v ${PWD}/config.toml:/opt/bin/config.toml \
-    -v ${PWD}/assets/directory:/opt/selenium/assets \
+    -v ${PWD}/assets:/opt/selenium/assets \
     saucelabs/stg-standalone:20220629
 ```
 
